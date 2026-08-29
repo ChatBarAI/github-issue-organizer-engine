@@ -1,0 +1,187 @@
+<% content_for :title, "GitHub Issue Organizer" %>
+<% content_for :head do %>
+  <%= stylesheet_link_tag "github_issue_organizer_engine/application", "data-turbo-track": "reload" %>
+  <%= javascript_include_tag "github_issue_organizer_engine/application", defer: true, "data-turbo-track": "reload" %>
+<% end %>
+
+<div
+  class="github-issue-organizer-engine"
+  data-timeline-url="<%= timeline_issues_path %>"
+  data-github-url="<%= github_url_issues_path %>"
+>
+  <header class="tif-heading">
+    <div>
+      <h1>GitHub Issue Organizer</h1>
+    </div>
+    <nav class="tif-heading-links" aria-label="Issue finder navigation">
+      <%= link_to "Settings", settings_path, class: "tif-account-link" %>
+      <%= link_to "Timelines", timelines_path, class: "tif-account-link" %>
+      <%= link_to github_identity_path, class: "tif-account-link" do %>
+        <% if @github_identity %>
+          GitHub: @<%= @github_identity.github_login %>
+        <% else %>
+          Link GitHub account
+        <% end %>
+      <% end %>
+    </nav>
+  </header>
+
+  <%= form_with url: open_in_github_issues_path,
+    method: :get,
+    html: { id: "github-issue-filters", target: "_blank" } do |form| %>
+    <section class="tif-panel">
+      <div class="tif-grid tif-grid-three">
+        <fieldset>
+          <legend>Issue state</legend>
+          <div class="tif-inline-options">
+            <% { "open" => "Open", "closed" => "Closed", "all" => "Open and closed" }.each do |value, label| %>
+              <label class="tif-switch">
+                <%= form.radio_button :state, value, checked: value == "open" %>
+                <span class="tif-switch-control" aria-hidden="true"></span>
+                <span class="tif-switch-label"><%= label %></span>
+              </label>
+            <% end %>
+          </div>
+        </fieldset>
+
+        <div class="tif-field">
+          <%= form.label :assignee, "Assigned to" %>
+          <%= form.text_field :assignee,
+            placeholder: @github_identity ? "Username, @me, or unassigned" : "Username or unassigned",
+            autocomplete: "off" %>
+        </div>
+
+        <div class="tif-field">
+          <%= form.label :creator, "Created by" %>
+          <%= form.text_field :creator,
+            placeholder: @github_identity ? "Username or @me" : "GitHub username",
+            autocomplete: "off" %>
+        </div>
+      </div>
+
+      <div class="tif-grid tif-grid-three tif-filter-options">
+        <fieldset>
+          <legend>Label matching</legend>
+          <div class="tif-inline-options">
+            <label class="tif-switch">
+              <%= form.radio_button :label_match, "all", checked: true %>
+              <span class="tif-switch-control" aria-hidden="true"></span>
+              <span class="tif-switch-label">All selected labels</span>
+            </label>
+            <label class="tif-switch">
+              <%= form.radio_button :label_match, "any" %>
+              <span class="tif-switch-control" aria-hidden="true"></span>
+              <span class="tif-switch-label">Any selected label</span>
+            </label>
+          </div>
+        </fieldset>
+
+        <div class="tif-field">
+          <%= form.label :title, "Title contains" %>
+          <%= form.text_field :title, placeholder: "For example, login failure", autocomplete: "off" %>
+        </div>
+
+        <div class="tif-field">
+          <%= form.label :sort, "GitHub result order" %>
+          <%= form.select :sort, [
+            [ "Recently updated", "updated-desc" ],
+            [ "Least recently updated", "updated-asc" ],
+            [ "Newest created", "created-desc" ],
+            [ "Oldest created", "created-asc" ],
+            [ "Most commented", "comments-desc" ],
+            [ "Most reactions", "reactions-desc" ]
+          ] %>
+        </div>
+      </div>
+
+      <div class="tif-field">
+        <%= form.label :custom_label, "Custom label" %>
+        <%= form.text_field :custom_label,
+          placeholder: "Optional label not listed below",
+          autocomplete: "off" %>
+      </div>
+
+      <div class="tif-label-groups">
+        <% label_groups = @suggested_labels.group_by { |label| label.include?(": ") ? label.split(": ", 2).first : "General" } %>
+        <% label_groups.to_a.partition { |group, _labels| group != "General" }.flatten(1).each do |group, labels| %>
+          <fieldset class="tif-label-group">
+            <legend><%= group == "WorkType" ? "Work type" : group %></legend>
+            <div class="tif-label-pills">
+              <% if group == "Priority" %>
+                <label class="tif-label-pill">
+                  <%= check_box_tag "no_priority", "1", false, data: { no_priority_filter: true } %>
+                  <span>No priority</span>
+                </label>
+              <% end %>
+              <% labels.each do |label| %>
+                <label class="tif-label-pill">
+                  <%= check_box_tag "labels[]", label, false,
+                    data: ({ priority_filter: true } if group == "Priority") %>
+                  <span><%= label.include?(": ") ? label.split(": ", 2).last : label %></span>
+                </label>
+              <% end %>
+            </div>
+          </fieldset>
+        <% end %>
+      </div>
+
+      <div class="tif-actions">
+        <%= form.submit "Open in GitHub", class: "tif-primary" %>
+        <button type="button" id="tif-copy-link">Copy GitHub link</button>
+        <button type="button" id="tif-open-timeline">Draft timeline</button>
+      </div>
+      <details class="tif-repositories">
+        <summary>Repositories searched (<%= @repositories.size %>)</summary>
+        <ul>
+          <% @repositories.each do |repository| %>
+            <li>
+              <%= link_to repository, "https://github.com/#{repository}", target: "_blank", rel: "noopener noreferrer" %>
+            </li>
+          <% end %>
+        </ul>
+      </details>
+      <p id="tif-status" class="tif-status" role="status" aria-live="polite"></p>
+    </section>
+  <% end %>
+
+  <dialog id="tif-timeline-dialog" aria-labelledby="tif-timeline-title">
+    <div class="tif-dialog-header">
+      <h2 id="tif-timeline-title">Draft issue timeline</h2>
+      <button type="button" id="tif-close-timeline" class="tif-dialog-close"
+        title="Close timeline dialog" aria-label="Close timeline dialog">
+        ×
+      </button>
+    </div>
+    <p class="tif-help">
+      Issues are assigned from Critical to Low across the available developers on eight-hour weekdays.
+      When a priority group exceeds developer capacity, you can rank its schedule order or use creation dates.
+      Developer IDs are managed in <%= link_to "Settings", settings_path %>. Items missing a priority
+      or effort label are listed separately.
+    </p>
+
+    <div class="tif-grid tif-timeline-settings">
+      <div class="tif-field">
+        <label for="tif-starts-on">Start date</label>
+        <input id="tif-starts-on" type="date" required>
+      </div>
+      <label class="tif-switch tif-save-option"
+             title="Use unavailable times from the previous timeline">
+        <input id="tif-inherit-unavailability" type="checkbox" role="switch" checked>
+        <span class="tif-switch-control" aria-hidden="true"></span>
+        <span class="tif-switch-label">Keep previous availability</span>
+      </label>
+      <label class="tif-switch tif-save-option"
+             title="Keep manual assignments for issues that are still open and schedulable">
+        <input id="tif-inherit-manual-assignments" type="checkbox" role="switch" checked>
+        <span class="tif-switch-control" aria-hidden="true"></span>
+        <span class="tif-switch-label">Keep manual assignments</span>
+      </label>
+    </div>
+
+    <div class="tif-dialog-actions">
+      <button type="button" id="tif-generate-timeline" class="tif-primary">Generate draft</button>
+    </div>
+
+    <div id="tif-timeline-results" class="tif-timeline-results" aria-live="polite" hidden></div>
+  </dialog>
+</div>

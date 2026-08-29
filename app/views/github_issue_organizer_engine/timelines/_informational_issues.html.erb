@@ -1,0 +1,61 @@
+<% groups = [
+  {
+    status: "In review",
+    badge: "R",
+    css_class: "is-review",
+    issues: timeline.in_review_issues
+  },
+  {
+    status: "Blocked",
+    badge: "!",
+    css_class: "is-blocked",
+    issues: timeline.blocked_issues
+  }
+] %>
+
+<% issue_count = groups.sum { |group| group[:issues].size } %>
+<% if issue_count.positive? %>
+  <details class="tif-informational-issues tif-compact-issue-cards">
+    <summary>Not Scheduled (<%= issue_count %>)</summary>
+    <p class="tif-help">
+      In-review and blocked issues are shown for visibility and do not consume timeline capacity.
+    </p>
+    <div class="tif-issue-card-grid">
+      <% groups.each do |group| %>
+        <% group[:issues].each do |issue| %>
+          <% assignee = issue["github_assignee_login"].presence || issue["github_assignee_id"].presence %>
+          <% priority_name = issue["priority"].presence&.delete_prefix("Priority: ") %>
+          <% priority_class = "is-priority-#{priority_name.downcase}" if priority_name %>
+          <% metadata = [ issue["effort"], ("@#{assignee}" if assignee) ].compact %>
+          <article class="tif-issue-card tif-informational-card <%= group[:css_class] %> <%= "tif-has-priority #{priority_class}" if priority_name %>">
+            <div class="tif-issue-card-position tif-informational-card-badge"
+              aria-label="<%= group[:status] %>">
+              <%= group[:badge] %>
+            </div>
+            <div class="tif-issue-card-content">
+              <h3>
+                <%= link_to issue["title"], issue["url"],
+                  target: "_blank", rel: "noopener noreferrer",
+                  title: "#{issue["repository"]}##{issue["issue_number"]}" %>
+              </h3>
+              <p>
+                <%= group[:status] %>
+                <%= " · conflicting status labels" if issue["status_conflict"] %>
+              </p>
+              <% if priority_name || metadata.any? %>
+                <p>
+                  <% if priority_name %>
+                    <span class="tif-priority-indicator" aria-label="<%= issue["priority"] %>">
+                      <span class="tif-priority-indicator-dot" aria-hidden="true"></span>
+                      <%= priority_name %>
+                    </span><%= " · " if metadata.any? %>
+                  <% end %><%= metadata.join(" · ") %>
+                </p>
+              <% end %>
+            </div>
+          </article>
+        <% end %>
+      <% end %>
+    </div>
+  </details>
+<% end %>

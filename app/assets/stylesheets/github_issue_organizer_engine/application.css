@@ -1,0 +1,1465 @@
+.github-issue-organizer-engine {
+  --tif-panel: #ffffff;
+  --tif-text: #1f2328;
+  --tif-muted: #59636e;
+  --tif-border: #d1d9e0;
+  --tif-accent: #0969da;
+  --tif-accent-hover: #0757b5;
+  --tif-success: #1a7f37;
+  --tif-danger: #cf222e;
+  --tif-panel-padding: clamp(14px, 2vw, 20px);
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: clip;
+  contain: inline-size;
+  color: var(--tif-text);
+  font: 16px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.dark .github-issue-organizer-engine {
+  --tif-panel: #161b22;
+  --tif-text: #e6edf3;
+  --tif-muted: #8d96a0;
+  --tif-border: #30363d;
+  --tif-accent: #2f81f7;
+  --tif-accent-hover: #58a6ff;
+  --tif-success: #3fb950;
+}
+
+.github-issue-organizer-engine *,
+.github-issue-organizer-engine *::before,
+.github-issue-organizer-engine *::after {
+  box-sizing: border-box;
+}
+
+.tif-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+
+.tif-heading h1 {
+  margin: 0;
+  font-size: clamp(1.45rem, 3vw, 1.9rem);
+  line-height: 1.2;
+}
+
+.tif-heading p {
+  margin: 4px 0 0;
+  color: var(--tif-muted);
+}
+
+.tif-timeline-heading {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0 16px;
+}
+
+.tif-timeline-heading .tif-heading-links {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.tif-timeline-heading-meta {
+  display: flex;
+  grid-column: 1 / -1;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  margin-top: 4px;
+}
+
+.tif-timeline-heading-meta p {
+  margin: 0;
+}
+
+.tif-account-link {
+  flex: 0 0 auto;
+  padding: 7px 11px;
+  border: 1px solid var(--tif-border);
+  border-radius: 999px;
+  color: var(--tif-accent);
+  font-size: 0.84rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.tif-heading-links {
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.tif-panel {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: clip;
+  padding: var(--tif-panel-padding);
+  border: 1px solid var(--tif-border);
+  border-radius: 12px;
+  background: var(--tif-panel);
+  box-shadow: 0 8px 24px rgba(31, 35, 40, 0.08);
+}
+
+.tif-timeline-chart-panel {
+  overflow: visible;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.tif-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.tif-grid-three {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.github-issue-organizer-engine fieldset {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.github-issue-organizer-engine legend,
+.github-issue-organizer-engine label:not(.tif-label-pill, .tif-check-row, .tif-switch) {
+  display: block;
+  margin-bottom: 7px;
+  font-weight: 600;
+}
+
+.tif-field {
+  min-width: 0;
+  margin-bottom: 16px;
+}
+
+.tif-grid .tif-field {
+  margin-bottom: 0;
+}
+
+.github-issue-organizer-engine input[type="text"],
+.github-issue-organizer-engine input[type="date"],
+.github-issue-organizer-engine input[type="datetime-local"],
+.github-issue-organizer-engine input[type="time"],
+.github-issue-organizer-engine input[type="number"],
+.github-issue-organizer-engine textarea,
+.github-issue-organizer-engine select {
+  width: 100%;
+  min-height: 42px;
+  padding: 8px 11px;
+  border: 1px solid var(--tif-border);
+  border-radius: 7px;
+  background: var(--tif-panel);
+  color: var(--tif-text);
+  font: inherit;
+}
+
+.github-issue-organizer-engine textarea {
+  min-height: 150px;
+  resize: vertical;
+}
+
+.github-issue-organizer-engine input:focus,
+.github-issue-organizer-engine textarea:focus,
+.github-issue-organizer-engine select:focus,
+.github-issue-organizer-engine button:focus-visible,
+.github-issue-organizer-engine a:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--tif-accent) 35%, transparent);
+  outline-offset: 2px;
+}
+
+.tif-inline-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px 14px;
+}
+
+.tif-inline-options label {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 6px;
+  margin: 0 !important;
+  cursor: pointer;
+  font-weight: 400 !important;
+}
+
+.tif-inline-options .tif-switch {
+  gap: 10px;
+}
+
+.tif-label-groups {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  margin-top: 20px;
+}
+
+.github-issue-organizer-engine .tif-label-group {
+  flex: 1 1 260px;
+  padding: 14px;
+  border: 1px solid var(--tif-border);
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--tif-accent) 2%, var(--tif-panel));
+}
+
+.tif-label-group legend {
+  padding: 0 5px;
+  color: var(--tif-muted);
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.tif-label-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.tif-label-pill {
+  display: inline-block;
+  margin: 0;
+  cursor: pointer;
+}
+
+.tif-label-pill input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  opacity: 0;
+}
+
+.tif-label-pill span {
+  display: inline-block;
+  padding: 5px 10px;
+  border: 1px solid var(--tif-border);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--tif-accent) 6%, transparent);
+  font-size: 0.8rem;
+}
+
+.tif-label-pill input:checked + span {
+  border-color: var(--tif-accent);
+  background: var(--tif-accent);
+  color: #ffffff;
+}
+
+.tif-label-pill input:focus-visible + span {
+  outline: 3px solid color-mix(in srgb, var(--tif-accent) 35%, transparent);
+  outline-offset: 2px;
+}
+
+.tif-check-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 18px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.tif-actions,
+.tif-dialog-actions {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.github-issue-organizer-engine button,
+.github-issue-organizer-engine input[type="submit"] {
+  min-height: 42px;
+  padding: 9px 14px;
+  border: 1px solid var(--tif-accent);
+  border-radius: 7px;
+  background: transparent;
+  color: var(--tif-accent);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 600;
+}
+
+.github-issue-organizer-engine .tif-primary {
+  background: var(--tif-accent);
+  color: #ffffff;
+}
+
+.github-issue-organizer-engine .tif-primary:hover {
+  background: var(--tif-accent-hover);
+}
+
+.github-issue-organizer-engine button:disabled {
+  cursor: wait;
+  opacity: 0.55;
+}
+
+.github-issue-organizer-engine button.tif-account-link {
+  min-height: 0;
+  padding: 7px 11px;
+  border-color: var(--tif-border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--tif-accent);
+  font-size: 0.84rem;
+}
+
+.github-issue-organizer-engine button.tif-account-link:hover {
+  border-color: var(--tif-accent);
+  background: color-mix(in srgb, var(--tif-accent) 6%, transparent);
+}
+
+.tif-repositories {
+  margin-top: 14px;
+  padding: 10px 12px;
+  border: 1px solid var(--tif-border);
+  border-radius: 7px;
+  color: var(--tif-muted);
+}
+
+.tif-repositories summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.tif-repositories ul {
+  display: grid;
+  gap: 5px;
+  margin: 10px 0 0;
+  padding-left: 24px;
+}
+
+.tif-repositories a {
+  color: var(--tif-accent);
+  overflow-wrap: anywhere;
+}
+
+.tif-status {
+  min-height: 22px;
+  margin: 12px 0 0;
+  color: var(--tif-muted);
+  text-align: center;
+}
+
+#tif-timeline-dialog,
+#tif-add-unavailability-dialog,
+#tif-unavailability-dialog {
+  width: min(96vw, 1180px);
+  max-height: 90vh;
+  margin: auto;
+  overflow-y: auto;
+  padding: 24px;
+  border: 1px solid var(--tif-border);
+  border-radius: 12px;
+  background: var(--tif-panel);
+  color: var(--tif-text);
+}
+
+#tif-timeline-dialog::backdrop,
+#tif-add-unavailability-dialog::backdrop,
+#tif-unavailability-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.58);
+}
+
+#tif-timeline-dialog h2,
+#tif-add-unavailability-dialog h2,
+#tif-unavailability-dialog h2 {
+  margin: 0;
+}
+
+.tif-dialog-header {
+  position: sticky;
+  z-index: 1;
+  top: -24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin: -24px -24px 0;
+  padding: 18px 24px 12px;
+  border-bottom: 1px solid var(--tif-border);
+  background: var(--tif-panel);
+}
+
+.github-issue-organizer-engine .tif-dialog-close {
+  flex: 0 0 auto;
+}
+
+.tif-help {
+  margin: 6px 0 0;
+  color: var(--tif-muted);
+  font-size: 0.88rem;
+}
+
+.tif-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.tif-timeline-settings {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 16px 24px;
+  margin: 20px 0 0;
+}
+
+.tif-timeline-settings .tif-field {
+  flex: 0 1 220px;
+}
+
+.tif-save-option {
+  margin: 0 0 10px;
+}
+
+.tif-dialog-actions {
+  grid-template-columns: 1fr;
+}
+
+.tif-timeline-results {
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1px solid var(--tif-border);
+}
+
+.tif-timeline-results h3 {
+  margin: 0 0 4px;
+  font-size: 1.05rem;
+}
+
+.tif-timeline-summary {
+  margin: 0 0 14px;
+  color: var(--tif-muted);
+  font-size: 0.88rem;
+}
+
+.tif-ranking-groups {
+  display: grid;
+  gap: 16px;
+}
+
+.tif-ranking-group {
+  padding: 14px;
+  border: 1px solid var(--tif-border);
+  border-radius: 9px;
+}
+
+.tif-ranking-group h4 {
+  margin: 0 0 10px;
+}
+
+.tif-ranking-list {
+  display: grid;
+  gap: 8px;
+}
+
+.github-issue-organizer-engine .tif-ranking-issue {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  width: 100%;
+  text-align: left;
+}
+
+.github-issue-organizer-engine .tif-ranking-issue.is-ranked {
+  border-color: var(--tif-accent);
+  background: color-mix(in srgb, var(--tif-accent) 10%, var(--tif-panel));
+}
+
+.tif-ranking-position {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--tif-border) 65%, transparent);
+  font-weight: 700;
+}
+
+.tif-ranking-label {
+  display: grid;
+  gap: 3px;
+  overflow-wrap: anywhere;
+}
+
+.tif-ranking-name {
+  font-weight: 600;
+}
+
+.tif-ranking-effort {
+  color: var(--tif-muted);
+  font-size: 0.8rem;
+}
+
+.tif-ranking-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.tif-timeline-chart-scroll {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: scroll;
+  overscroll-behavior-x: contain;
+  scrollbar-gutter: stable;
+  -webkit-overflow-scrolling: touch;
+  border: 1px solid var(--tif-border);
+  border-radius: 9px;
+  background: var(--tif-panel);
+}
+
+.tif-timeline-view-options {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 8px;
+}
+
+.tif-switch {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 28px;
+  margin: 0;
+  color: var(--tif-muted);
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 650;
+}
+
+.tif-switch input:is([type="checkbox"], [type="radio"]) {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  opacity: 0;
+}
+
+.tif-switch-control {
+  position: relative;
+  flex: 0 0 auto;
+  width: 36px;
+  height: 20px;
+  border: 1px solid var(--tif-border);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--tif-muted) 30%, var(--tif-panel));
+  transition: background 140ms ease, border-color 140ms ease;
+}
+
+.tif-switch-control::after {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border: 1px solid color-mix(in srgb, var(--tif-muted) 38%, transparent);
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--tif-text) 25%, transparent);
+  content: "";
+  transition: transform 140ms ease;
+}
+
+.tif-switch input:is([type="checkbox"], [type="radio"]):checked + .tif-switch-control {
+  border-color: var(--tif-accent);
+  background: var(--tif-accent);
+}
+
+.tif-switch input:is([type="checkbox"], [type="radio"]):checked + .tif-switch-control::after {
+  border-color: #ffffff;
+  transform: translateX(16px);
+}
+
+.tif-switch input:is([type="checkbox"], [type="radio"]):focus-visible + .tif-switch-control {
+  outline: 4px solid color-mix(in srgb, var(--tif-accent) 25%, transparent);
+  outline-offset: 1px;
+}
+
+.tif-switch input:is([type="checkbox"], [type="radio"]):disabled + .tif-switch-control,
+.tif-switch input:is([type="checkbox"], [type="radio"]):disabled ~ .tif-switch-label {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.tif-switch-label {
+  display: block;
+}
+
+.tif-switch.tif-save-option {
+  margin: 0 0 10px;
+}
+
+.tif-timeline-chart-scroll:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--tif-accent) 35%, transparent);
+  outline-offset: 2px;
+}
+
+.tif-timeline-chart {
+  --tif-timeline-column-width: 112px;
+  display: grid;
+  width: calc(118px + var(--tif-timeline-days) * var(--tif-timeline-column-width));
+  grid-template-columns: 118px minmax(
+    calc(var(--tif-timeline-days) * var(--tif-timeline-column-width)),
+    1fr
+  );
+  min-width: calc(118px + var(--tif-timeline-days) * var(--tif-timeline-column-width));
+}
+
+.tif-timeline-chart-view.is-compact-weekends .tif-timeline-chart {
+  width: calc(118px + var(--tif-timeline-compact-content-width));
+  grid-template-columns: 118px minmax(var(--tif-timeline-compact-content-width), 1fr);
+  min-width: calc(118px + var(--tif-timeline-compact-content-width));
+}
+
+.tif-timeline-corner,
+.tif-timeline-developer {
+  position: sticky;
+  z-index: 3;
+  left: 0;
+  display: flex;
+  align-items: center;
+  padding: 10px 12px;
+  border-right: 1px solid var(--tif-border);
+  background: var(--tif-panel);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.tif-timeline-corner {
+  border-bottom: 1px solid var(--tif-border);
+  color: var(--tif-muted);
+}
+
+.tif-timeline-developer {
+  border-top: 1px solid var(--tif-border);
+}
+
+.tif-timeline-axis,
+.tif-timeline-track {
+  display: grid;
+  grid-template-columns: repeat(var(--tif-timeline-days), minmax(var(--tif-timeline-column-width), 1fr));
+}
+
+.tif-timeline-chart-view.is-compact-weekends .tif-timeline-axis {
+  grid-template-columns: var(--tif-timeline-compact-day-columns);
+}
+
+.tif-timeline-chart-view.is-compact-weekends .tif-timeline-track {
+  grid-template-columns: var(--tif-timeline-compact-track-columns);
+  background-image: none;
+}
+
+.tif-timeline-axis {
+  border-bottom: 1px solid var(--tif-border);
+}
+
+.tif-timeline-tick {
+  padding: 9px 8px;
+  border-left: 1px solid var(--tif-border);
+  color: var(--tif-muted);
+  font-size: 0.75rem;
+  font-weight: 650;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.tif-timeline-tick:first-child {
+  border-left: 0;
+}
+
+.tif-timeline-tick.is-weekend {
+  background: color-mix(in srgb, var(--tif-border) 35%, transparent);
+}
+
+.tif-timeline-chart-view.is-compact-weekends .tif-timeline-tick.is-weekend {
+  padding-right: 2px;
+  padding-left: 2px;
+  overflow: hidden;
+  font-size: 0;
+  text-overflow: clip;
+}
+
+.tif-timeline-chart-view.is-compact-weekends .tif-timeline-tick.is-weekend::after {
+  content: attr(data-compact-label);
+  font-size: 0.7rem;
+}
+
+.tif-timeline-track {
+  grid-template-columns: repeat(var(--tif-timeline-slots, var(--tif-timeline-days)), minmax(14px, 1fr));
+  grid-template-rows: repeat(var(--tif-timeline-lanes), minmax(72px, auto));
+  border-top: 1px solid var(--tif-border);
+  min-height: calc(var(--tif-timeline-lanes) * 72px);
+  background-image: linear-gradient(
+    to right,
+    transparent 0,
+    transparent calc(100% - 1px),
+    var(--tif-border) calc(100% - 1px),
+    var(--tif-border) 100%
+  );
+  background-size: calc(100% / var(--tif-timeline-days)) 100%;
+}
+
+.tif-timeline-day-column {
+  display: none;
+}
+
+.tif-timeline-chart-view.is-compact-weekends .tif-timeline-day-column {
+  z-index: 0;
+  display: block;
+  grid-row: 1 / -1;
+  border-left: 1px solid var(--tif-border);
+  pointer-events: none;
+}
+
+.tif-timeline-chart-view.is-compact-weekends .tif-timeline-day-column:first-child {
+  border-left: 0;
+}
+
+.tif-timeline-chart-view.is-compact-weekends .tif-timeline-day-column.is-weekend {
+  background: color-mix(in srgb, var(--tif-border) 18%, transparent);
+}
+
+.tif-timeline-task {
+  position: relative;
+  z-index: 1;
+  align-self: stretch;
+  min-width: 0;
+  margin: 5px;
+  overflow: visible;
+  padding: 8px 9px;
+  border: 1px solid color-mix(in srgb, var(--tif-accent) 45%, var(--tif-border));
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--tif-accent) 12%, var(--tif-panel));
+  transition: box-shadow 140ms ease, opacity 140ms ease, transform 140ms ease;
+}
+
+.tif-has-priority.is-priority-critical {
+  --tif-priority-color: #cf222e;
+}
+
+.tif-has-priority.is-priority-high {
+  --tif-priority-color: #bc4c00;
+}
+
+.tif-has-priority.is-priority-medium {
+  --tif-priority-color: #9a6700;
+}
+
+.tif-has-priority.is-priority-low {
+  --tif-priority-color: #1a7f37;
+}
+
+.dark .tif-has-priority.is-priority-critical {
+  --tif-priority-color: #f85149;
+}
+
+.dark .tif-has-priority.is-priority-high {
+  --tif-priority-color: #db6d28;
+}
+
+.dark .tif-has-priority.is-priority-medium {
+  --tif-priority-color: #d29922;
+}
+
+.dark .tif-has-priority.is-priority-low {
+  --tif-priority-color: #3fb950;
+}
+
+.tif-timeline-task.tif-has-priority {
+  border-color: color-mix(in srgb, var(--tif-priority-color) 55%, var(--tif-border));
+  border-inline-start-width: 4px;
+  background: color-mix(in srgb, var(--tif-priority-color) 11%, var(--tif-panel));
+}
+
+.tif-timeline-task[draggable="true"] {
+  cursor: grab;
+}
+
+.tif-timeline-task[draggable="true"]:active {
+  cursor: grabbing;
+}
+
+.tif-timeline-task.is-dragging {
+  opacity: 0.3;
+}
+
+.tif-timeline-track.is-issue-drag-over {
+  position: relative;
+  outline: 2px solid color-mix(in srgb, var(--tif-accent) 70%, transparent);
+  outline-offset: -2px;
+}
+
+.tif-timeline-track.is-issue-drag-over::before {
+  position: absolute;
+  z-index: 4;
+  top: 0;
+  bottom: 0;
+  left: var(--tif-issue-drop-left);
+  width: 3px;
+  border-radius: 2px;
+  background: var(--tif-accent);
+  content: "";
+  pointer-events: none;
+  transform: translateX(-50%);
+}
+
+.github-issue-organizer-engine.is-moving-timeline-issue .tif-timeline-task {
+  pointer-events: none;
+}
+
+.tif-timeline-chart.is-highlighting-issue .tif-timeline-task:not(.is-highlighted) {
+  opacity: 0.24;
+}
+
+.tif-timeline-task.is-highlighted {
+  z-index: 2;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--tif-accent) 55%, transparent);
+  transform: translateY(-2px);
+}
+
+.tif-timeline-unavailable {
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  min-width: 0;
+  margin: 5px;
+  overflow: hidden;
+  padding: 8px 5px;
+  border: 1px dashed var(--tif-muted);
+  border-radius: 7px;
+  background: repeating-linear-gradient(
+    -45deg,
+    color-mix(in srgb, var(--tif-border) 65%, transparent),
+    color-mix(in srgb, var(--tif-border) 65%, transparent) 5px,
+    transparent 5px,
+    transparent 10px
+  );
+  color: var(--tif-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.tif-timeline-unavailable.has-reason {
+  color: var(--tif-text);
+}
+
+.tif-timeline-unavailable-label {
+  display: block;
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tif-timeline-unavailable.has-reason .tif-timeline-unavailable-label {
+  color: var(--tif-muted);
+  font-size: 0.62rem;
+  font-weight: 500;
+}
+
+.tif-timeline-unavailable-reason {
+  display: block;
+  width: 100%;
+  overflow: hidden;
+  color: var(--tif-text);
+  font-size: 0.76rem;
+  font-weight: 700;
+  text-overflow: ellipsis;
+}
+
+.github-issue-organizer-engine button.tif-timeline-unavailable {
+  min-height: 0;
+  padding: 8px 5px;
+  border: 1px dashed var(--tif-muted);
+  background: repeating-linear-gradient(
+    -45deg,
+    color-mix(in srgb, var(--tif-border) 65%, transparent),
+    color-mix(in srgb, var(--tif-border) 65%, transparent) 5px,
+    transparent 5px,
+    transparent 10px
+  );
+  color: var(--tif-muted);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: inherit;
+}
+
+.github-issue-organizer-engine button.tif-timeline-unavailable:hover {
+  border-color: var(--tif-accent);
+  color: var(--tif-accent);
+}
+
+#tif-add-unavailability-dialog,
+#tif-unavailability-dialog {
+  width: min(94vw, 640px);
+}
+
+#tif-add-unavailability-dialog form,
+#tif-unavailability-dialog form:first-of-type {
+  margin-top: 22px;
+}
+
+.tif-editor-section-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.tif-editor-section-heading h2 {
+  margin: 0;
+}
+
+.tif-unavailability-selection-prompt {
+  margin: 3px 3px 12px;
+  padding: 10px 12px;
+  border: 1px solid color-mix(in srgb, var(--tif-accent) 45%, var(--tif-border));
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--tif-accent) 10%, var(--tif-panel));
+  color: var(--tif-text);
+  font-weight: 600;
+}
+
+.github-issue-organizer-engine.is-selecting-unavailability .tif-timeline-track {
+  position: relative;
+  cursor: crosshair;
+}
+
+.github-issue-organizer-engine.is-selecting-unavailability .tif-timeline-track * {
+  cursor: crosshair;
+}
+
+.github-issue-organizer-engine.is-selecting-unavailability .tif-timeline-track::after {
+  position: absolute;
+  z-index: 2;
+  top: 0;
+  bottom: 0;
+  left: var(--tif-selection-left, -100%);
+  width: var(--tif-selection-width, 0);
+  border: 2px solid var(--tif-accent);
+  background: color-mix(in srgb, var(--tif-accent) 24%, transparent);
+  content: "";
+  pointer-events: none;
+}
+
+.tif-unavailability-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.tif-unavailability-reassignment {
+  margin-top: 18px;
+}
+
+.tif-unavailability-reassignment .tif-switch-label,
+.tif-unavailability-reassignment small {
+  display: block;
+}
+
+.tif-unavailability-reassignment small {
+  color: var(--tif-muted);
+  font-weight: 400;
+}
+
+.github-issue-organizer-engine textarea.tif-unavailability-reason-input {
+  min-height: 72px;
+}
+
+.tif-timeline-task a,
+.tif-timeline-task span {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.github-issue-organizer-engine .tif-github-assignee-marker {
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index: 2;
+  display: grid;
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  padding: 0;
+  place-items: center;
+  overflow: visible;
+  border: 2px solid var(--tif-panel);
+  border-radius: 50%;
+  background: #1f883d;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 22%);
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 800;
+  line-height: 1;
+  transform: translate(40%, -40%);
+}
+
+.github-issue-organizer-engine .tif-manual-assignment-marker {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  z-index: 2;
+  display: grid;
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  padding: 0;
+  place-items: center;
+  overflow: visible;
+  border: 2px solid var(--tif-panel);
+  border-radius: 50%;
+  background: var(--tif-accent);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 22%);
+  color: #fff;
+  font-size: 0.62rem;
+  font-weight: 800;
+  line-height: 1;
+  transform: translate(40%, 40%);
+}
+
+.tif-timeline-task a {
+  color: var(--tif-accent);
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.tif-timeline-task span {
+  margin-top: 4px;
+  color: var(--tif-muted);
+  font-size: 0.72rem;
+}
+
+.tif-timeline-list {
+  display: grid;
+  gap: 9px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tif-timeline-item {
+  display: grid;
+  grid-template-columns: minmax(130px, 0.45fr) minmax(0, 1.55fr);
+  gap: 12px;
+  padding: 11px 12px;
+  border: 1px solid var(--tif-border);
+  border-radius: 8px;
+}
+
+.tif-timeline-dates,
+.tif-timeline-meta {
+  color: var(--tif-muted);
+  font-size: 0.8rem;
+}
+
+.tif-timeline-dates {
+  font-weight: 600;
+}
+
+.tif-timeline-issue a {
+  color: var(--tif-accent);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+  text-decoration: none;
+}
+
+.tif-timeline-notes {
+  margin-top: 14px;
+  padding-top: 10px;
+  border-top: 1px solid var(--tif-border);
+}
+
+.tif-informational-issues {
+  margin-top: 12px;
+  padding: 10px;
+  border: 1px solid var(--tif-border);
+  border-radius: 9px;
+}
+
+.tif-informational-issues h2,
+.tif-informational-issues h3 {
+  margin: 0 0 5px;
+  font-size: 1.05rem;
+}
+
+.tif-informational-issues > summary {
+  cursor: pointer;
+  color: var(--tif-text);
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.tif-informational-issues[open] > summary {
+  margin-bottom: 5px;
+}
+
+.tif-informational-issues .tif-help {
+  margin: 0 0 12px;
+}
+
+.tif-informational-card.is-review {
+  border-color: color-mix(in srgb, #2684ff 55%, var(--tif-border));
+}
+
+.tif-informational-card.is-review .tif-informational-card-badge {
+  background: color-mix(in srgb, #2684ff 16%, var(--tif-panel));
+  color: #2684ff;
+}
+
+.tif-informational-card.is-blocked {
+  border-color: color-mix(in srgb, var(--tif-danger) 55%, var(--tif-border));
+}
+
+.tif-informational-card.is-blocked .tif-informational-card-badge {
+  background: color-mix(in srgb, var(--tif-danger) 16%, var(--tif-panel));
+  color: var(--tif-danger);
+}
+
+.tif-timeline-issues {
+  margin-top: 12px;
+}
+
+.tif-timeline-issues h2 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.tif-issue-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.tif-compact-issue-cards .tif-issue-card-grid {
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.tif-issue-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  gap: 11px;
+  padding: 13px 38px 13px 13px;
+  border: 1px solid var(--tif-border);
+  border-radius: 9px;
+  background: var(--tif-panel);
+  transition: border-color 140ms ease, box-shadow 140ms ease, transform 140ms ease;
+}
+
+.tif-compact-issue-cards .tif-issue-card {
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: 8px;
+  padding: 10px 30px 10px 10px;
+}
+
+.tif-issue-card.tif-has-priority {
+  border-inline-start: 4px solid var(--tif-priority-color);
+}
+
+.tif-issue-card.is-highlighted {
+  border-color: var(--tif-accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--tif-accent) 25%, transparent);
+  transform: translateY(-2px);
+}
+
+.tif-issue-card-position {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--tif-accent) 14%, var(--tif-panel));
+  color: var(--tif-accent);
+  font-weight: 700;
+}
+
+.tif-compact-issue-cards .tif-issue-card-position {
+  width: 26px;
+  height: 26px;
+  font-size: 0.8rem;
+}
+
+.tif-issue-card-content h3,
+.tif-issue-card-content p {
+  margin: 0;
+}
+
+.tif-issue-card-content h3 {
+  font-size: 0.95rem;
+}
+
+.tif-compact-issue-cards .tif-issue-card-content h3 {
+  font-size: 0.9rem;
+  line-height: 1.3;
+}
+
+.tif-issue-card-content h3 a {
+  color: var(--tif-accent);
+  overflow-wrap: anywhere;
+  text-decoration: none;
+}
+
+.tif-issue-card-content p {
+  margin-top: 5px;
+  color: var(--tif-muted);
+  font-size: 0.8rem;
+}
+
+.tif-compact-issue-cards .tif-issue-card-content p {
+  margin-top: 3px;
+  font-size: 0.76rem;
+}
+
+.tif-priority-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 1px 7px 1px 5px;
+  border: 1px solid color-mix(in srgb, var(--tif-priority-color) 45%, var(--tif-border));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--tif-priority-color) 9%, var(--tif-panel));
+  color: var(--tif-text);
+  font-weight: 650;
+}
+
+.tif-priority-indicator-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--tif-priority-color);
+}
+
+.tif-error {
+  margin-bottom: 16px;
+  padding: 10px 12px;
+  border: 1px solid color-mix(in srgb, var(--tif-danger) 60%, var(--tif-border));
+  border-radius: 7px;
+  color: var(--tif-danger);
+}
+
+.tif-settings-panel {
+  max-width: 620px;
+}
+
+.tif-editor-grid {
+  display: grid;
+  grid-template-columns: minmax(260px, 0.7fr) minmax(360px, 1.3fr);
+  gap: 18px;
+}
+
+.tif-editor-grid h2,
+.tif-editor-section h2 {
+  margin-top: 0;
+  font-size: 1.1rem;
+}
+
+.tif-editor-section {
+  margin-top: 12px;
+  overflow: visible;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.tif-settings-actions {
+  grid-template-columns: minmax(180px, 260px);
+}
+
+.tif-verified {
+  color: var(--tif-muted);
+}
+
+.tif-saved-list {
+  display: grid;
+  gap: 8px;
+}
+
+.tif-saved-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px;
+  border: 1px solid var(--tif-border);
+  border-radius: 8px;
+}
+
+.tif-saved-item h2,
+.tif-saved-item p {
+  margin: 0;
+}
+
+.tif-saved-item h2 {
+  font-size: 1rem;
+}
+
+.tif-saved-item a {
+  color: var(--tif-accent);
+}
+
+.tif-saved-item p {
+  margin-top: 3px;
+  color: var(--tif-muted);
+  font-size: 0.84rem;
+}
+
+.tif-saved-item .tif-unavailability-reason {
+  color: var(--tif-text);
+  white-space: pre-wrap;
+}
+
+.tif-saved-item-actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.tif-timeline-status {
+  display: inline-block;
+  padding: 2px 7px;
+  border: 1px solid var(--tif-border);
+  border-radius: 999px;
+  color: var(--tif-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1.3;
+  vertical-align: middle;
+}
+
+.tif-timeline-status.is-current {
+  border-color: color-mix(in srgb, var(--tif-success) 45%, var(--tif-border));
+  background: color-mix(in srgb, var(--tif-success) 12%, transparent);
+  color: var(--tif-success);
+}
+
+.tif-timeline-status.is-obsolete {
+  opacity: 0.75;
+}
+
+.github-issue-organizer-engine .tif-danger-button {
+  border-color: var(--tif-danger);
+  color: var(--tif-danger);
+}
+
+.github-issue-organizer-engine .tif-dialog-close,
+.github-issue-organizer-engine .tif-icon-danger-button {
+  display: grid;
+  width: 32px;
+  min-height: 32px;
+  padding: 0;
+  place-items: center;
+  border-color: transparent;
+  border-radius: 50%;
+  color: var(--tif-muted);
+  font-size: 1.25rem;
+  font-weight: 400;
+  line-height: 1;
+}
+
+.github-issue-organizer-engine .tif-dialog-close:hover {
+  border-color: color-mix(in srgb, var(--tif-accent) 35%, transparent);
+  background: color-mix(in srgb, var(--tif-accent) 6%, transparent);
+  color: var(--tif-accent);
+}
+
+.github-issue-organizer-engine .tif-icon-danger-button:hover {
+  border-color: color-mix(in srgb, var(--tif-danger) 40%, transparent);
+  background: color-mix(in srgb, var(--tif-danger) 8%, transparent);
+  color: var(--tif-danger);
+}
+
+@media (max-width: 800px) {
+  .tif-grid-three,
+  .tif-editor-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 560px) {
+  .tif-heading,
+  .tif-timeline-item {
+    grid-template-columns: 1fr;
+  }
+
+  .tif-heading {
+    flex-direction: column;
+  }
+
+  .tif-timeline-heading {
+    grid-template-columns: 1fr;
+    row-gap: 8px;
+  }
+
+  .tif-timeline-heading .tif-heading-links,
+  .tif-timeline-heading-meta {
+    grid-column: 1;
+    grid-row: auto;
+  }
+
+  .tif-timeline-heading-meta {
+    align-items: flex-start;
+    flex-direction: column;
+    margin-top: 0;
+  }
+
+  .tif-heading-links {
+    justify-content: flex-start;
+  }
+
+  .tif-saved-item {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .tif-grid,
+  .tif-actions,
+  .tif-dialog-actions {
+    grid-template-columns: 1fr;
+  }
+}

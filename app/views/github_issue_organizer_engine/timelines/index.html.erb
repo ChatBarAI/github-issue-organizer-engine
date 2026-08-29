@@ -1,0 +1,56 @@
+<% content_for :title, "Saved timelines · Team Issue Finder" %>
+<% content_for :head do %>
+  <%= stylesheet_link_tag "github_issue_organizer_engine/application", "data-turbo-track": "reload" %>
+<% end %>
+
+<div class="github-issue-organizer-engine">
+  <header class="tif-heading">
+    <div>
+      <h1>Timelines</h1>
+      <p>Generated issue schedules shared by authorized users. The current timeline is shown first.</p>
+    </div>
+    <%= link_to "New draft", root_path, class: "tif-account-link" %>
+  </header>
+
+  <section class="tif-panel">
+    <% if @timelines.any? %>
+      <div class="tif-saved-list">
+        <% @timelines.each do |timeline| %>
+          <article class="tif-saved-item">
+            <div>
+              <h2>
+                <%= link_to "Timeline ##{timeline.id}", timeline_path(timeline) %>
+                <span class="tif-timeline-status is-<%= timeline.status %>"><%= timeline.status.titleize %></span>
+              </h2>
+              <p>
+                Starts <%= l timeline.starts_on, format: :long %> ·
+                Ends <%= l timeline.ends_on, format: :long %> ·
+                <%= pluralize timeline.developer_ids.size, "developer" %> ·
+                <%= pluralize timeline.items.size, "scheduled issue" %> ·
+                created by <%= timeline.created_by.try(:fullname).presence || timeline.created_by.try(:email) || "User ##{timeline.created_by_id}" %>
+              </p>
+            </div>
+            <div class="tif-saved-item-actions">
+              <% if timeline.draft? %>
+                <%= button_to "Make current",
+                  make_current_timeline_path(timeline),
+                  method: :patch,
+                  class: "tif-account-link",
+                  form: { data: { turbo_confirm: "Make this the current timeline? The existing current timeline will become obsolete." } } %>
+              <% end %>
+              <%= button_to "×",
+                timeline_path(timeline),
+                method: :delete,
+                class: "tif-icon-danger-button",
+                title: "Delete timeline",
+                aria: { label: "Delete timeline ##{timeline.id}" },
+                form: { data: { turbo_confirm: "Delete this timeline?" } } %>
+            </div>
+          </article>
+        <% end %>
+      </div>
+    <% else %>
+      <p class="tif-help">No timelines have been generated yet.</p>
+    <% end %>
+  </section>
+</div>

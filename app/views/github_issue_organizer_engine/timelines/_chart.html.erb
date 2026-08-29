@@ -1,0 +1,175 @@
+<% chart_items = timeline.items.to_a %>
+<% if chart_items.any? %>
+  <% first_date = [ timeline.starts_on, chart_items.map(&:starts_on).min ].compact.min %>
+  <% last_date = chart_items.map(&:ends_on).max %>
+  <% dates = (first_date..last_date).to_a %>
+  <% weekend_day_indexes = dates.each_index.select { |index| dates[index].saturday? || dates[index].sunday? } %>
+  <% compact_day_columns = dates.map { |date| date.saturday? || date.sunday? ? "32px" : "112px" }.join(" ") %>
+  <% compact_slot_columns = dates.map { |date| "repeat(8, #{date.saturday? || date.sunday? ? 4 : 14}px)" }.join(" ") %>
+  <% compact_content_width = dates.sum { |date| date.saturday? || date.sunday? ? 32 : 112 } %>
+  <div class="tif-timeline-chart-view"
+    data-timeline-chart-view
+    <% if local_assigns[:chart_id].present? %>id="<%= local_assigns[:chart_id] %>"<% end %>>
+    <% unless local_assigns[:show_view_options] == false %>
+      <div class="tif-timeline-view-options">
+        <label class="tif-switch" title="Make Saturday and Sunday narrower to show more days">
+          <input type="checkbox" role="switch" data-compact-weekends-toggle>
+          <span class="tif-switch-control" aria-hidden="true"></span>
+          <span class="tif-switch-label">Compact weekends</span>
+        </label>
+      </div>
+    <% end %>
+    <div class="tif-timeline-chart-scroll"
+      role="region"
+      aria-label="Issue schedule by developer and date"
+      tabindex="0">
+      <div class="tif-timeline-chart"
+        style="--tif-timeline-days: <%= dates.length %>; --tif-timeline-compact-content-width: <%= compact_content_width %>px; --tif-timeline-compact-day-columns: <%= compact_day_columns %>; --tif-timeline-compact-track-columns: <%= compact_slot_columns %>">
+      <div class="tif-timeline-corner">Developer ID</div>
+      <div class="tif-timeline-axis">
+        <% dates.each do |date| %>
+          <div class="tif-timeline-tick <%= "is-weekend" if date.saturday? || date.sunday? %>"
+            data-compact-label="<%= date.saturday? ? "Sa" : "Su" if date.saturday? || date.sunday? %>"
+            title="<%= l date, format: :long %>">
+            <%= l date, format: "%a %-d %b" %>
+          </div>
+        <% end %>
+      </div>
+
+      <% timeline.developer_ids.each do |developer_id| %>
+        <% developer_items = chart_items.select { |item| item.developer_id == developer_id }
+          .sort_by { |item| [ item.starts_on, item.position ] } %>
+        <% placements = developer_items.flat_map do |item|
+          segments = item.work_segments.presence || [
+            {
+              "starts_at" => "#{item.starts_on.iso8601}T09:00:00",
+              "ends_at" => "#{item.ends_on.iso8601}T17:00:00"
+            }
+          ]
+          visual_segments = segments.each_with_object([]) do |segment, merged|
+            previous = merged.last
+            previous_end = Time.zone.parse(previous["ends_at"]) if previous
+            segment_start = Time.zone.parse(segment.fetch("starts_at"))
+            continues_next_weekday = previous_end &&
+              !previous_end.friday? &&
+              segment_start.to_date == previous_end.to_date + 1 &&
+              previous_end.hour == 17 &&
+              segment_start.hour == 9
+
+            if continues_next_weekday
+              previous["ends_at"] = segment.fetch("ends_at")
+            else
+              merged << segment.dup
+            end
+          end
+          visual_segments.map { |segment| [ item, segment ] }
+        end %>
+
+        <div class="tif-timeline-developer"><%= developer_id %></div>
+        <div class="tif-timeline-track"
+          data-unavailability-selection-track
+          <%= "data-timeline-issue-drop-track" if local_assigns[:editable_issues] %>
+          data-developer-id="<%= developer_id %>"
+          data-start-date="<%= first_date.iso8601 %>"
+          data-slot-count="<%= dates.length * 8 %>"
+          data-weekend-day-indexes="<%= weekend_day_indexes.join(",") %>"
+          style="--tif-timeline-lanes: 1; --tif-timeline-slots: <%= dates.length * 8 %>">
+          <% dates.each_with_index do |date, index| %>
+            <span class="tif-timeline-day-column <%= "is-weekend" if date.saturday? || date.sunday? %>"
+              aria-hidden="true"
+              style="grid-column: <%= (index * 8) + 1 %> / span 8"></span>
+          <% end %>
+          <% timeline.unavailabilities.select { |period| period.persisted? && period.developer_id == developer_id }.each do |period| %>
+            <% reason_rendered = false %>
+            <% dates.each do |date| %>
+              <% day_start = Time.zone.local(date.year, date.month, date.day, 9) %>
+              <% day_end = Time.zone.local(date.year, date.month, date.day, 17) %>
+              <% blocked_start = [ period.starts_at.in_time_zone, day_start ].max %>
+              <% blocked_end = [ period.ends_at.in_time_zone, day_end ].min %>
+              <% next unless blocked_end > blocked_start %>
+              <% blocked_start_hour = [ [ blocked_start.hour - 9, 0 ].max, 8 ].min %>
+              <% blocked_end_hour = [ [ blocked_end.hour - 9, 0 ].max, 8 ].min %>
+              <% blocked_start_column = ((date - first_date).to_i * 8) + blocked_start_hour + 1 %>
+              <% blocked_end_column = ((date - first_date).to_i * 8) + blocked_end_hour + 1 %>
+              <% unavailable_tag = local_assigns[:editable_unavailability] ? :button : :div %>
+              <% show_reason = period.reason.present? && !reason_rendered %>
+              <% reason_rendered ||= show_reason %>
+              <% unavailable_content = if show_reason
+                safe_join([
+                  content_tag(:span, period.reason, class: "tif-timeline-unavailable-reason"),
+                  content_tag(:span, "Unavailable", class: "tif-timeline-unavailable-label")
+                ], " ")
+              else
+                content_tag(:span, "Unavailable", class: "tif-timeline-unavailable-label")
+              end %>
+              <%= content_tag unavailable_tag,
+                unavailable_content,
+                type: ("button" if unavailable_tag == :button),
+                class: [ "tif-timeline-unavailable", ("has-reason" if show_reason) ],
+                data: (local_assigns[:editable_unavailability] ? {
+                  unavailability: true,
+                  update_url: timeline_unavailability_path(timeline, period),
+                  developer_id: period.developer_id,
+                  unavailable_on: period.starts_at.in_time_zone.to_date.iso8601,
+                  unavailable_at_time: period.starts_at.in_time_zone.strftime("%H:%M"),
+                  duration_amount: ((period.ends_at - period.starts_at) / 1.hour).to_f,
+                  reason: period.reason
+                } : {}),
+                style: "grid-column: #{blocked_start_column} / #{blocked_end_column}; grid-row: 1",
+                title: [
+                  "Unavailable: #{l blocked_start, format: :long} – #{l blocked_end, format: :long}",
+                  period.reason.presence
+                ].compact.join(" · ") %>
+            <% end %>
+          <% end %>
+          <% placements.each do |item, segment| %>
+            <% segment_start = Time.zone.parse(segment.fetch("starts_at")) %>
+            <% segment_end = Time.zone.parse(segment.fetch("ends_at")) %>
+            <% start_hour = [ [ segment_start.hour - 9, 0 ].max, 8 ].min %>
+            <% end_hour = [ [ segment_end.hour - 9, 0 ].max, 8 ].min %>
+            <% start_column = ((segment_start.to_date - first_date).to_i * 8) + start_hour + 1 %>
+            <% end_column = ((segment_end.to_date - first_date).to_i * 8) + end_hour + 1 %>
+            <% end_column = start_column + 1 if end_column <= start_column %>
+            <% priority_name = item.priority.delete_prefix("Priority: ") %>
+            <article class="tif-timeline-task tif-has-priority is-priority-<%= priority_name.downcase %>"
+              data-timeline-issue="<%= item.id %>"
+              <% if local_assigns[:editable_issues] %>
+                data-timeline-item-move-url="<%= timeline_item_path(timeline, item) %>"
+                data-item-start-column="<%= start_column %>"
+                draggable="true"
+                tabindex="0"
+                aria-describedby="tif-issue-drag-help"
+                aria-keyshortcuts="Alt+Shift+ArrowLeft Alt+Shift+ArrowRight Alt+Shift+ArrowUp Alt+Shift+ArrowDown"
+              <% end %>
+              style="grid-column: <%= start_column %> / <%= end_column %>; grid-row: 1"
+              title="<%= l segment_start, format: :long %> – <%= l segment_end, format: :long %>">
+              <%= link_to item.title,
+                item.url,
+                target: "_blank",
+                rel: "noopener noreferrer",
+                draggable: (false if local_assigns[:editable_issues]),
+                title: "#{item.repository}##{item.issue_number} · #{item.title}" %>
+              <% if item.github_assignee_matches_developer? %>
+                <span class="tif-github-assignee-marker"
+                  title="Timeline developer matches the first GitHub assignee"
+                  aria-label="Timeline developer matches the first GitHub assignee">✓</span>
+              <% end %>
+              <% if item.manually_assigned? %>
+                <span class="tif-manual-assignment-marker"
+                  title="Manually assigned in this timeline"
+                  aria-label="Manually assigned in this timeline">M</span>
+              <% end %>
+              <span>
+                <%= item.repository %>#<%= item.issue_number %> ·
+                <%= item.priority %> · <%= item.effort_hours / 8.0 %> developer-days
+              </span>
+            </article>
+          <% end %>
+        </div>
+      <% end %>
+      </div>
+    </div>
+  </div>
+<% else %>
+  <p class="tif-help">No issues are scheduled in this timeline.</p>
+<% end %>

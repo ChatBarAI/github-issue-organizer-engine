@@ -1,0 +1,47 @@
+<% content_for :title, "GitHub account · Team Issue Finder" %>
+<% content_for :head do %>
+  <%= stylesheet_link_tag "github_issue_organizer_engine/application", "data-turbo-track": "reload" %>
+<% end %>
+
+<div class="github-issue-organizer-engine">
+  <header class="tif-heading">
+    <div>
+      <h1>GitHub account</h1>
+      <p>Link your Rails account to a GitHub username for the <code>@me</code> filters.</p>
+    </div>
+    <%= link_to "Back to issue finder", root_path, class: "tif-account-link" %>
+  </header>
+
+  <section class="tif-panel tif-settings-panel">
+    <% if @github_identity.errors.any? %>
+      <div class="tif-error" role="alert">
+        <%= @github_identity.errors.full_messages.to_sentence %>
+      </div>
+    <% end %>
+
+    <%= form_with scope: :github_identity, url: github_identity_path, method: :patch do |form| %>
+      <div class="tif-field">
+        <%= form.label :github_login, "GitHub username" %>
+        <%= form.text_field :github_login,
+          value: @github_identity.github_login,
+          placeholder: "For example, octocat",
+          autocomplete: "off",
+          required: true %>
+        <p class="tif-help">
+          The engine verifies the username with GitHub and stores GitHub's immutable numeric user ID.
+        </p>
+      </div>
+
+      <% if @github_identity.persisted? %>
+        <p class="tif-verified">
+          Verified <%= time_ago_in_words(@github_identity.verified_at) %> ago as
+          <strong>@<%= @github_identity.github_login %></strong>.
+        </p>
+      <% end %>
+
+      <div class="tif-actions tif-settings-actions">
+        <%= form.submit "Verify and save", class: "tif-primary" %>
+      </div>
+    <% end %>
+  </section>
+</div>

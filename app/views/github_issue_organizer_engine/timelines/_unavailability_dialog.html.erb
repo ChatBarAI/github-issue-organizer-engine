@@ -1,0 +1,54 @@
+<dialog id="tif-unavailability-dialog" aria-labelledby="tif-unavailability-dialog-title">
+  <div class="tif-dialog-header">
+    <h2 id="tif-unavailability-dialog-title">Edit unavailable time</h2>
+    <button type="button" class="tif-dialog-close" data-close-unavailability-dialog
+      title="Close dialog" aria-label="Close dialog">×</button>
+  </div>
+
+  <%= form_with scope: :timeline_unavailability,
+    url: timeline_unavailabilities_path(timeline),
+    method: :patch,
+    html: { data: { unavailability_update_form: true } } do |form| %>
+    <div class="tif-field">
+      <%= form.label :developer_id, "Developer ID" %>
+      <%= form.select :developer_id, timeline.developer_ids, {}, required: true %>
+    </div>
+    <div class="tif-grid">
+      <div class="tif-field">
+        <%= form.label :unavailable_on, "Unavailable date" %>
+        <%= form.date_field :unavailable_on, required: true %>
+      </div>
+      <div class="tif-field">
+        <%= form.label :unavailable_at_time, "Starting at" %>
+        <%= form.time_field :unavailable_at_time, step: 3600, required: true %>
+      </div>
+      <div class="tif-field">
+        <%= form.label :duration_amount, "Duration" %>
+        <%= form.number_field :duration_amount, min: 1, step: 1, required: true %>
+      </div>
+      <div class="tif-field">
+        <%= form.label :duration_unit, "Unit" %>
+        <%= form.select :duration_unit, [ [ "Hours", "hours" ], [ "Calendar days", "days" ] ] %>
+      </div>
+    </div>
+    <div class="tif-field">
+      <%= form.label :reason, "Reason (optional)" %>
+      <%= form.text_area :reason,
+        rows: 2,
+        class: "tif-unavailability-reason-input",
+        placeholder: "For example: appointment or annual leave" %>
+    </div>
+    <label class="tif-switch tif-unavailability-reassignment">
+      <%= form.check_box :allow_reassignment, checked: true, role: "switch" %>
+      <span class="tif-switch-control" aria-hidden="true"></span>
+      <span class="tif-switch-label">
+        Allow issues to move to another developer
+        <small>The scheduler will use the earliest available developer.</small>
+      </span>
+    </label>
+    <div class="tif-unavailability-dialog-actions">
+      <%= form.submit "Save changes", class: "tif-primary" %>
+      <button type="button" data-close-unavailability-dialog>Cancel</button>
+    </div>
+  <% end %>
+</dialog>

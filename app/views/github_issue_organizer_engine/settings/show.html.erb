@@ -1,0 +1,53 @@
+<% content_for :title, "Settings · Team Issue Finder" %>
+<% content_for :head do %>
+  <%= stylesheet_link_tag "github_issue_organizer_engine/application", "data-turbo-track": "reload" %>
+<% end %>
+
+<div class="github-issue-organizer-engine">
+  <header class="tif-heading">
+    <div>
+      <h1>Settings</h1>
+      <p>Choose the repositories to search and the developers available for timeline drafts.</p>
+    </div>
+    <%= link_to "Back to issue finder", root_path, class: "tif-account-link" %>
+  </header>
+
+  <section class="tif-panel tif-settings-panel">
+    <% if @setting.errors.any? %>
+      <div class="tif-error" role="alert">
+        <%= @setting.errors.full_messages.to_sentence %>
+      </div>
+    <% end %>
+
+    <%= form_with model: @setting, url: settings_path, method: :patch do |form| %>
+      <div class="tif-field">
+        <%= form.label :repositories_text, "GitHub repositories" %>
+        <%= form.text_area :repositories_text,
+          rows: 8,
+          placeholder: "your-organization/repository-one\nyour-organization/repository-two",
+          spellcheck: false,
+          required: true %>
+        <p class="tif-help">
+          Enter one <code>owner/repository</code> name per line. The server-side GitHub token must
+          have permission to read each repository.
+        </p>
+      </div>
+
+      <div class="tif-field">
+        <%= form.label :developer_ids_text, "Developer IDs" %>
+        <%= form.text_area :developer_ids_text,
+          rows: 6,
+          placeholder: "developer-123\ndeveloper-456",
+          spellcheck: false,
+          required: true %>
+        <p class="tif-help">
+          Enter one developer ID per line. Timeline work is distributed across these developers.
+        </p>
+      </div>
+
+      <div class="tif-actions tif-settings-actions">
+        <%= form.submit "Save settings", class: "tif-primary" %>
+      </div>
+    <% end %>
+  </section>
+</div>

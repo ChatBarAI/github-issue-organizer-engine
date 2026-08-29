@@ -1,0 +1,10 @@
+<!DOCTYPE html>
+<html>
+  <body>
+    <nav>
+      <%= link_to "Admin", main_app.admin_root_path %>
+      <%= link_to "Sign out", @host_session_path, data: { turbo_method: :delete } %>
+    </nav>
+    <%= yield %>
+  </body>
+</html>

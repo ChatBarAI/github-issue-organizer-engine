@@ -1,0 +1,93 @@
+<% content_for :title, "Edit timeline ##{@timeline.id} · GitHub Issue Organizer" %>
+<% content_for :head do %>
+  <%= stylesheet_link_tag "github_issue_organizer_engine/application", "data-turbo-track": "reload" %>
+  <%= javascript_include_tag "github_issue_organizer_engine/application", defer: true, "data-turbo-track": "reload" %>
+<% end %>
+
+<div class="github-issue-organizer-engine" data-unavailability-editor data-timeline-issue-editor>
+  <header class="tif-heading tif-timeline-heading">
+    <h1>Edit timeline #<%= @timeline.id %></h1>
+    <div class="tif-timeline-heading-meta">
+      <p><span class="tif-timeline-status is-<%= @timeline.status %>"><%= @timeline.status.titleize %></span> · Drag issues to reorder a developer's work or move it directly to another developer.</p>
+      <% if @timeline.items.any? %>
+        <label class="tif-switch" title="Make Saturday and Sunday narrower to show more days">
+          <input type="checkbox"
+            role="switch"
+            data-compact-weekends-toggle
+            data-timeline-chart-target="tif-updated-schedule-chart">
+          <span class="tif-switch-control" aria-hidden="true"></span>
+          <span class="tif-switch-label">Compact weekends</span>
+        </label>
+      <% end %>
+    </div>
+    <nav class="tif-heading-links" aria-label="Timeline navigation">
+      <%= link_to "View timeline", timeline_path(@timeline), class: "tif-account-link" %>
+      <%= link_to "All timelines", timelines_path, class: "tif-account-link" %>
+    </nav>
+  </header>
+
+  <section class="tif-panel tif-editor-section">
+    <div class="tif-editor-section-heading">
+      <h2>Unavailable time</h2>
+      <button type="button"
+        class="tif-account-link"
+        data-open-add-unavailability-dialog
+        aria-haspopup="dialog"
+        aria-controls="tif-add-unavailability-dialog">
+        Add
+      </button>
+    </div>
+    <% persisted_unavailabilities = @timeline.unavailabilities.select(&:persisted?) %>
+    <% if persisted_unavailabilities.any? %>
+      <div class="tif-saved-list">
+        <% persisted_unavailabilities.each do |period| %>
+          <article class="tif-saved-item">
+            <div>
+              <h3><%= period.developer_id %></h3>
+              <p>
+                <%= l period.starts_at, format: :long %> – <%= l period.ends_at, format: :long %> ·
+                <%= number_with_precision((period.ends_at - period.starts_at) / 1.hour, precision: 1, strip_insignificant_zeros: true) %> hours
+              </p>
+              <% if period.reason.present? %>
+                <p class="tif-unavailability-reason"><%= period.reason %></p>
+              <% end %>
+            </div>
+            <%= button_to "×",
+              timeline_unavailability_path(@timeline, period),
+              method: :delete,
+              class: "tif-icon-danger-button",
+              title: "Delete unavailable period",
+              aria: { label: "Delete unavailable period for #{period.developer_id}" },
+              form: { data: { turbo_confirm: "Delete this unavailable period and reschedule?" } } %>
+          </article>
+        <% end %>
+      </div>
+    <% else %>
+      <p class="tif-help">No unavailable time has been added.</p>
+    <% end %>
+  </section>
+
+  <section class="tif-panel tif-editor-section" aria-labelledby="tif-updated-schedule-title">
+    <h2 id="tif-updated-schedule-title" class="tif-visually-hidden">Updated schedule</h2>
+    <p id="tif-issue-drag-help" class="tif-visually-hidden" data-timeline-issue-move-status role="status" aria-live="polite">
+      Drag an issue to a new position. You can also focus it and use Alt + Shift + arrow keys. Moving shifts the schedule without automatically reassigning other issues.
+    </p>
+    <p class="tif-unavailability-selection-prompt"
+      data-unavailability-selection-prompt
+      role="status"
+      aria-live="polite"
+      hidden>
+      Click a position in the timeline to choose the developer and start time.
+    </p>
+    <%= render "chart",
+      timeline: @timeline,
+      editable_unavailability: true,
+      editable_issues: true,
+      show_view_options: false,
+      chart_id: "tif-updated-schedule-chart" %>
+    <%= render "informational_issues", timeline: @timeline %>
+  </section>
+
+  <%= render "add_unavailability_dialog", timeline: @timeline, unavailability: @unavailability %>
+  <%= render "unavailability_dialog", timeline: @timeline %>
+</div>

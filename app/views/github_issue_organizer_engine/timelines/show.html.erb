@@ -1,0 +1,90 @@
+<% content_for :title, "Timeline ##{@timeline.id} · Team Issue Finder" %>
+<% content_for :head do %>
+  <%= stylesheet_link_tag "github_issue_organizer_engine/application", "data-turbo-track": "reload" %>
+  <%= javascript_include_tag "github_issue_organizer_engine/application", defer: true, "data-turbo-track": "reload" %>
+<% end %>
+
+<div class="github-issue-organizer-engine" data-timeline-details>
+  <header class="tif-heading tif-timeline-heading">
+    <h1>Timeline #<%= @timeline.id %></h1>
+    <div class="tif-timeline-heading-meta">
+      <p>
+        <span class="tif-timeline-status is-<%= @timeline.status %>"><%= @timeline.status.titleize %></span> ·
+        Starts <%= l @timeline.starts_on, format: :long %> ·
+        Ends <%= l @timeline.ends_on, format: :long %> ·
+        <%= pluralize @timeline.developer_ids.size, "developer" %> ·
+        created <%= time_ago_in_words(@timeline.created_at) %> ago
+      </p>
+      <% if @timeline.items.any? %>
+        <label class="tif-switch" title="Make Saturday and Sunday narrower to show more days">
+          <input type="checkbox"
+            role="switch"
+            data-compact-weekends-toggle
+            data-timeline-chart-target="tif-timeline-chart">
+          <span class="tif-switch-control" aria-hidden="true"></span>
+          <span class="tif-switch-label">Compact weekends</span>
+        </label>
+      <% end %>
+    </div>
+    <nav class="tif-heading-links" aria-label="Timeline navigation">
+      <%= link_to "Edit", edit_timeline_path(@timeline), class: "tif-account-link" %>
+      <%= link_to "All timelines", timelines_path, class: "tif-account-link" %>
+    </nav>
+  </header>
+
+  <section class="tif-panel tif-timeline-chart-panel">
+    <%= render "chart",
+      timeline: @timeline,
+      show_view_options: false,
+      chart_id: "tif-timeline-chart" %>
+  </section>
+
+  <section class="tif-panel tif-timeline-issues tif-compact-issue-cards" aria-labelledby="tif-scheduled-issues-title">
+    <h2 id="tif-scheduled-issues-title"
+      title="Hover over or focus an issue to highlight it in the timeline.">Scheduled Issues</h2>
+    <div class="tif-issue-card-grid">
+      <% @timeline.items.each do |item| %>
+        <% priority_name = item.priority.delete_prefix("Priority: ") %>
+        <% priority_class = "is-priority-#{priority_name.downcase}" %>
+        <article class="tif-issue-card tif-has-priority <%= priority_class %>"
+          data-timeline-issue-card="<%= item.id %>">
+          <% if item.github_assignee_matches_developer? %>
+            <span class="tif-github-assignee-marker"
+              title="Timeline developer matches the first GitHub assignee"
+              aria-label="Timeline developer matches the first GitHub assignee">✓</span>
+          <% end %>
+          <% if item.manually_assigned? %>
+            <span class="tif-manual-assignment-marker"
+              title="Manually assigned in this timeline"
+              aria-label="Manually assigned in this timeline">M</span>
+          <% end %>
+          <div class="tif-issue-card-position" aria-label="Schedule position <%= item.position %>">
+            <%= item.position %>
+          </div>
+          <div class="tif-issue-card-content">
+            <h3>
+              <%= link_to item.title,
+                item.url,
+                target: "_blank",
+                rel: "noopener noreferrer",
+                title: "#{item.repository}##{item.issue_number}" %>
+            </h3>
+            <p>
+              <%= item.developer_id %> ·
+              <%= compact_date_range item.starts_on, item.ends_on %>
+            </p>
+            <p>
+              <span class="tif-priority-indicator" aria-label="<%= item.priority %>">
+                <span class="tif-priority-indicator-dot" aria-hidden="true"></span>
+                <%= priority_name %>
+              </span> ·
+              <%= item.effort_hours == 4 ? "4 hours" : "#{item.effort_hours / 8.0} developer-days" %>
+            </p>
+          </div>
+        </article>
+      <% end %>
+    </div>
+  </section>
+
+  <%= render "informational_issues", timeline: @timeline %>
+</div>
