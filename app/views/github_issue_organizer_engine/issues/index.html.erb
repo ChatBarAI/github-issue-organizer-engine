@@ -30,11 +30,11 @@
     method: :get,
     html: { id: "github-issue-filters", target: "_blank" } do |form| %>
     <section class="tif-panel">
-      <div class="tif-grid tif-grid-three">
+      <div class="tif-grid tif-grid-four tif-filter-row">
         <fieldset>
           <legend>Issue state</legend>
           <div class="tif-inline-options">
-            <% { "open" => "Open", "closed" => "Closed", "all" => "Open and closed" }.each do |value, label| %>
+            <% { "open" => "Open", "closed" => "Closed" }.each do |value, label| %>
               <label class="tif-switch">
                 <%= form.radio_button :state, value, checked: value == "open" %>
                 <span class="tif-switch-control" aria-hidden="true"></span>
@@ -57,21 +57,30 @@
             placeholder: @github_identity ? "Username or @me" : "GitHub username",
             autocomplete: "off" %>
         </div>
+
+        <div class="tif-field">
+          <%= form.label :result_type, "Show" %>
+          <%= form.select :result_type, [
+            [ "Issues", "issues" ],
+            [ "Pull requests awaiting my review", "review_requested" ],
+            [ "All pull requests", "pull_requests" ]
+          ] %>
+        </div>
       </div>
 
-      <div class="tif-grid tif-grid-three tif-filter-options">
+      <div class="tif-grid tif-grid-four tif-filter-row tif-filter-options">
         <fieldset>
           <legend>Label matching</legend>
           <div class="tif-inline-options">
             <label class="tif-switch">
               <%= form.radio_button :label_match, "all", checked: true %>
               <span class="tif-switch-control" aria-hidden="true"></span>
-              <span class="tif-switch-label">All selected labels</span>
+              <span class="tif-switch-label">All</span>
             </label>
             <label class="tif-switch">
               <%= form.radio_button :label_match, "any" %>
               <span class="tif-switch-control" aria-hidden="true"></span>
-              <span class="tif-switch-label">Any selected label</span>
+              <span class="tif-switch-label">Any</span>
             </label>
           </div>
         </fieldset>
@@ -79,6 +88,13 @@
         <div class="tif-field">
           <%= form.label :title, "Title contains" %>
           <%= form.text_field :title, placeholder: "For example, login failure", autocomplete: "off" %>
+        </div>
+
+        <div class="tif-field">
+          <%= form.label :custom_label, "Custom label" %>
+          <%= form.text_field :custom_label,
+            placeholder: "Optional label not listed below",
+            autocomplete: "off" %>
         </div>
 
         <div class="tif-field">
@@ -92,13 +108,6 @@
             [ "Most reactions", "reactions-desc" ]
           ] %>
         </div>
-      </div>
-
-      <div class="tif-field">
-        <%= form.label :custom_label, "Custom label" %>
-        <%= form.text_field :custom_label,
-          placeholder: "Optional label not listed below",
-          autocomplete: "off" %>
       </div>
 
       <div class="tif-label-groups">

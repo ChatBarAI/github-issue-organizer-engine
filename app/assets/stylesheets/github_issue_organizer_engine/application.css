@@ -127,6 +127,14 @@
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
+.tif-grid-four {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.tif-filter-row {
+  grid-template-columns: minmax(180px, 0.5fr) repeat(3, minmax(0, 1fr));
+}
+
 .github-issue-organizer-engine fieldset {
   min-width: 0;
   margin: 0;
@@ -1414,6 +1422,13 @@
   color: var(--tif-danger);
 }
 
+@media (max-width: 1050px) {
+  .tif-grid-four,
+  .tif-filter-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 @media (max-width: 800px) {
   .tif-grid-three,
   .tif-editor-grid {
@@ -1458,6 +1473,8 @@
   }
 
   .tif-grid,
+  .tif-grid-four,
+  .tif-filter-row,
   .tif-actions,
   .tif-dialog-actions {
     grid-template-columns: 1fr;

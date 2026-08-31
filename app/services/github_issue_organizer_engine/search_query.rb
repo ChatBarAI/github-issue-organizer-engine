@@ -3,6 +3,7 @@ require "cgi"
 module GithubIssueOrganizerEngine
   class SearchQuery
     VALID_STATES = %w[open closed all].freeze
+    VALID_RESULT_TYPES = %w[issues review_requested pull_requests].freeze
     VALID_MATCH_MODES = %w[single all any].freeze
     VALID_SORTS = %w[
       updated-desc
@@ -39,11 +40,13 @@ module GithubIssueOrganizerEngine
     def normalize(params)
       raw = params.respond_to?(:to_unsafe_h) ? params.to_unsafe_h : params.to_h
       state = raw.fetch("state", "open").to_s
+      result_type = raw.fetch("result_type", "issues").to_s
       match_mode = raw.fetch("label_match", "single").to_s
       sort = raw.fetch("sort", "updated-desc").to_s
 
       filters = {
         "state" => VALID_STATES.include?(state) ? state : "open",
+        "result_type" => VALID_RESULT_TYPES.include?(result_type) ? result_type : "issues",
         "label_match" => VALID_MATCH_MODES.include?(match_mode) ? match_mode : "single",
         "sort" => VALID_SORTS.include?(sort) ? sort : "updated-desc",
         "labels" => Array(raw["labels"])
@@ -77,7 +80,7 @@ module GithubIssueOrganizerEngine
     end
 
     def build(repository, include_sort: true)
-      parts = [ "is:issue" ]
+      parts = [ result_type_qualifier ]
       parts << "state:#{filters["state"]}" unless filters["state"] == "all"
 
       if filters["assignee"] == "unassigned"
@@ -97,6 +100,17 @@ module GithubIssueOrganizerEngine
 
     def repository_expression
       @repositories.map { |repository| "repo:#{repository}" }.join(" OR ").then { |value| "(#{value})" }
+    end
+
+    def result_type_qualifier
+      case filters["result_type"]
+      when "review_requested"
+        "is:pr user-review-requested:@me"
+      when "pull_requests"
+        "is:pr"
+      else
+        "is:issue"
+      end
     end
 
     def label_qualifiers

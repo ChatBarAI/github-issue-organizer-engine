@@ -30,6 +30,20 @@ module GithubIssueOrganizerEngine
       end
     end
 
+    def test_builds_pull_request_queries
+      review_requested = SearchQuery.new(
+        { "result_type" => "review_requested" },
+        repositories: REPOSITORIES
+      )
+      pull_requests = SearchQuery.new(
+        { "result_type" => "pull_requests" },
+        repositories: REPOSITORIES
+      )
+
+      assert review_requested.web_query.start_with?("is:pr user-review-requested:@me state:open")
+      assert pull_requests.web_query.start_with?("is:pr state:open")
+    end
+
     def test_no_priority_removes_selected_priority_and_excludes_all_priority_labels
       query = SearchQuery.new(
         {

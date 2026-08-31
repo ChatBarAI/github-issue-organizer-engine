@@ -25,8 +25,24 @@ class HostRouteHelpersTest < ActionDispatch::IntegrationTest
     assert_select "input#tif-save-timeline", count: 0
     assert_select "label.tif-switch input#tif-inherit-unavailability[type='checkbox'][role='switch'][checked]", count: 1
     assert_select "label.tif-switch input#tif-inherit-manual-assignments[type='checkbox'][role='switch'][checked]", count: 1
-    assert_select ".tif-inline-options label.tif-switch input[type='radio'][name='state'] + .tif-switch-control", count: 3
-    assert_select ".tif-filter-options > fieldset:first-child > legend", text: "Label matching", count: 1
+    assert_select "select[name='result_type']" do
+      assert_select "option[value='issues']", text: "Issues", count: 1
+      assert_select "option[value='review_requested']", text: "Pull requests awaiting my review", count: 1
+      assert_select "option[value='pull_requests']", text: "All pull requests", count: 1
+    end
+    assert_select ".tif-grid-four > .tif-field:last-child select[name='result_type']", count: 1
+    assert_select ".tif-filter-row", count: 2
+    assert_select ".tif-filter-row" do |grids|
+      filter_row = grids.find do |grid|
+        grid.at_css("input[name='custom_label']") && grid.at_css("select[name='sort']")
+      end
+      assert filter_row, "expected custom label and result order to share a row"
+    end
+    assert_select ".tif-inline-options label.tif-switch input[type='radio'][name='state'] + .tif-switch-control", count: 2
+    assert_select "input[type='radio'][name='state'][value='open'][checked]", count: 1
+    assert_select "input[type='radio'][name='state'][value='closed']", count: 1
+    assert_select "input[type='radio'][name='state'][value='all']", count: 0
+    assert_select ".tif-filter-options > fieldset > legend", text: "Label matching", count: 1
     assert_select "fieldset" do |fieldsets|
       label_matching = fieldsets.find { |fieldset| fieldset.at_css("legend")&.text&.strip == "Label matching" }
 
@@ -49,5 +65,21 @@ class HostRouteHelpersTest < ActionDispatch::IntegrationTest
       assert_select priority_group, "input[name='labels[]'][data-priority-filter]", count: 4
       assert_includes priority_group.text, "No priority"
     end
+  end
+
+  test "open in GitHub redirects to account linking when @me has no linked identity" do
+    get "/admin/github-issues/issues/open_in_github", params: { creator: "@me" }
+
+    assert_redirected_to "/admin/github-issues/github_identity"
+    assert_equal "Link your GitHub username before using @me", flash[:alert]
+  end
+
+  test "open in GitHub preserves the selected pull request result type" do
+    get "/admin/github-issues/issues/open_in_github", params: { result_type: "review_requested" }
+
+    assert_response :redirect
+    query = CGI.parse(URI.parse(response.location).query).fetch("q").sole
+    assert query.start_with?("is:pr user-review-requested:@me state:open")
+    refute_includes query, "is:issue"
   end
 end

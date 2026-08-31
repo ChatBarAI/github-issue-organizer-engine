@@ -1,5 +1,7 @@
 module GithubIssueOrganizerEngine
   class IssuesController < ApplicationController
+    class MissingGithubIdentityError < ArgumentError; end
+
     rescue_from ArgumentError, with: :render_bad_request
     rescue_from Github::Client::Error, with: :render_github_error
 
@@ -15,17 +17,22 @@ module GithubIssueOrganizerEngine
 
     def open_in_github
       redirect_to search_query.github_url, allow_other_host: true
+    rescue MissingGithubIdentityError => error
+      redirect_to github_identity_path, alert: error.message
     end
 
     def timeline
       starts_on = params.require(:starts_on)
+      query = search_query
+      unless query.filters["result_type"] == "issues"
+        raise ArgumentError, "Timelines can only be drafted from issues"
+      end
       developer_ids = configured_developer_ids
       unless developer_ids.size.between?(1, 100)
         raise ArgumentError, "Configure between 1 and 100 developer IDs in Settings"
       end
       unavailability = inherited_unavailability(developer_ids)
 
-      query = search_query
       github_result = github_client.search(query)
       inherited_assignments = inherited_manual_assignments(github_result.issues, developer_ids)
       scheduler = Scheduler.new(
@@ -89,6 +96,7 @@ module GithubIssueOrganizerEngine
     def search_params
       params.slice(
         :state,
+        :result_type,
         :label_match,
         :assignee,
         :creator,
@@ -98,6 +106,7 @@ module GithubIssueOrganizerEngine
         :labels
       ).permit(
         :state,
+        :result_type,
         :label_match,
         :assignee,
         :creator,
@@ -131,7 +140,7 @@ module GithubIssueOrganizerEngine
 
     def linked_github_login
       current_github_identity&.github_login ||
-        raise(ArgumentError, "Link your GitHub username before using @me")
+        raise(MissingGithubIdentityError, "Link your GitHub username before using @me")
     end
 
     def persist_timeline(result, query, unavailability)

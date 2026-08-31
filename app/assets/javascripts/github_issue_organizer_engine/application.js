@@ -496,8 +496,18 @@
     const inheritManualAssignmentsInput = root.querySelector("#tif-inherit-manual-assignments");
     const results = root.querySelector("#tif-timeline-results");
     const status = root.querySelector("#tif-status");
+    const resultTypeInput = form.querySelector("[name='result_type']");
     const noPriorityInput = form.querySelector("[data-no-priority-filter]");
     const priorityInputs = form.querySelectorAll("[data-priority-filter]");
+
+    const updateTimelineAvailability = () => {
+      const issuesSelected = resultTypeInput.value === "issues";
+      openTimelineButton.disabled = !issuesSelected;
+      openTimelineButton.title = issuesSelected ? "" : "Timelines can only be drafted from issues";
+    };
+
+    resultTypeInput.addEventListener("change", updateTimelineAvailability);
+    updateTimelineAvailability();
 
     noPriorityInput.addEventListener("change", () => {
       if (!noPriorityInput.checked) return;
