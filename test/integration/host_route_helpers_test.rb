@@ -82,4 +82,17 @@ class HostRouteHelpersTest < ActionDispatch::IntegrationTest
     assert query.start_with?("is:pr user-review-requested:@me state:open")
     refute_includes query, "is:issue"
   end
+
+  test "delete all drafts destroys only the draft scope" do
+    destroyed_drafts = [ Object.new, Object.new ]
+    draft_scope = Object.new
+    draft_scope.define_singleton_method(:destroy_all) { destroyed_drafts }
+
+    GithubIssueOrganizerEngine::Timeline.stub(:draft, draft_scope) do
+      delete "/admin/github-issues/timelines/destroy_drafts"
+    end
+
+    assert_redirected_to "/admin/github-issues/timelines"
+    assert_equal "2 draft timelines deleted.", flash[:notice]
+  end
 end

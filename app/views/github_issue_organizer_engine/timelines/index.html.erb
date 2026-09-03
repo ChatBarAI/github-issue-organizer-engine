@@ -9,7 +9,16 @@
       <h1>Timelines</h1>
       <p>Generated issue schedules shared by authorized users. The current timeline is shown first.</p>
     </div>
-    <%= link_to "New draft", root_path, class: "tif-account-link" %>
+    <nav class="tif-heading-links" aria-label="Timeline actions">
+      <% if @timelines.any?(&:draft?) %>
+        <%= button_to "Delete all drafts",
+          destroy_drafts_timelines_path,
+          method: :delete,
+          class: "tif-account-link tif-danger-button",
+          form: { data: { turbo_confirm: "Delete all draft timelines? This cannot be undone." } } %>
+      <% end %>
+      <%= link_to "New draft", root_path, class: "tif-account-link" %>
+    </nav>
   </header>
 
   <section class="tif-panel">
@@ -19,12 +28,11 @@
           <article class="tif-saved-item">
             <div>
               <h2>
-                <%= link_to "Timeline ##{timeline.id}", timeline_path(timeline) %>
+                <%= link_to compact_date_range(timeline.starts_on, timeline.ends_on || timeline.starts_on), timeline_path(timeline) %>
                 <span class="tif-timeline-status is-<%= timeline.status %>"><%= timeline.status.titleize %></span>
               </h2>
               <p>
-                Starts <%= l timeline.starts_on, format: :long %> ·
-                Ends <%= l timeline.ends_on, format: :long %> ·
+                Timeline #<%= timeline.id %> ·
                 <%= pluralize timeline.developer_ids.size, "developer" %> ·
                 <%= pluralize timeline.items.size, "scheduled issue" %> ·
                 created by <%= timeline.created_by.try(:fullname).presence || timeline.created_by.try(:email) || "User ##{timeline.created_by_id}" %>
@@ -32,11 +40,11 @@
             </div>
             <div class="tif-saved-item-actions">
               <% if timeline.draft? %>
-                <%= button_to "Make current",
+                <%= button_to "Set as current",
                   make_current_timeline_path(timeline),
                   method: :patch,
                   class: "tif-account-link",
-                  form: { data: { turbo_confirm: "Make this the current timeline? The existing current timeline will become obsolete." } } %>
+                  form: { data: { turbo_confirm: "Set this draft as the current timeline? The existing current timeline will become obsolete." } } %>
               <% end %>
               <%= button_to "×",
                 timeline_path(timeline),

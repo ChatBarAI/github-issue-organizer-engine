@@ -36,6 +36,12 @@ module GithubIssueOrganizerEngine
       redirect_to timelines_path, notice: "Timeline deleted."
     end
 
+    def destroy_drafts
+      deleted_count = Timeline.draft.destroy_all.size
+      noun = deleted_count == 1 ? "draft timeline" : "draft timelines"
+      redirect_to timelines_path, notice: "#{deleted_count} #{noun} deleted."
+    end
+
     def make_current
       @timeline.make_current!
       redirect_to timelines_path, notice: "Timeline ##{@timeline.id} is now current."

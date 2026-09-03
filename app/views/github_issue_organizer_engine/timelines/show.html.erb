@@ -27,6 +27,13 @@
       <% end %>
     </div>
     <nav class="tif-heading-links" aria-label="Timeline navigation">
+      <% if @timeline.draft? %>
+        <%= button_to "Set as current",
+          make_current_timeline_path(@timeline),
+          method: :patch,
+          class: "tif-account-link",
+          form: { data: { turbo_confirm: "Set this draft as the current timeline? The existing current timeline will become obsolete." } } %>
+      <% end %>
       <%= link_to "Edit", edit_timeline_path(@timeline), class: "tif-account-link" %>
       <%= link_to "All timelines", timelines_path, class: "tif-account-link" %>
     </nav>

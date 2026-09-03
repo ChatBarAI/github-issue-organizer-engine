@@ -21,12 +21,19 @@
       <% end %>
     </div>
     <nav class="tif-heading-links" aria-label="Timeline navigation">
+      <% if @timeline.draft? %>
+        <%= button_to "Set as current",
+          make_current_timeline_path(@timeline),
+          method: :patch,
+          class: "tif-account-link",
+          form: { data: { turbo_confirm: "Set this draft as the current timeline? The existing current timeline will become obsolete." } } %>
+      <% end %>
       <%= link_to "View timeline", timeline_path(@timeline), class: "tif-account-link" %>
       <%= link_to "All timelines", timelines_path, class: "tif-account-link" %>
     </nav>
   </header>
 
-  <section class="tif-panel tif-editor-section">
+  <section class="tif-panel tif-editor-section tif-unavailability-section">
     <div class="tif-editor-section-heading">
       <h2>Unavailable time</h2>
       <button type="button"
@@ -62,22 +69,20 @@
           </article>
         <% end %>
       </div>
-    <% else %>
-      <p class="tif-help">No unavailable time has been added.</p>
     <% end %>
-  </section>
-
-  <section class="tif-panel tif-editor-section" aria-labelledby="tif-updated-schedule-title">
-    <h2 id="tif-updated-schedule-title" class="tif-visually-hidden">Updated schedule</h2>
-    <p id="tif-issue-drag-help" class="tif-visually-hidden" data-timeline-issue-move-status role="status" aria-live="polite">
-      Drag an issue to a new position. You can also focus it and use Alt + Shift + arrow keys. Moving shifts the schedule without automatically reassigning other issues.
-    </p>
     <p class="tif-unavailability-selection-prompt"
       data-unavailability-selection-prompt
       role="status"
       aria-live="polite"
       hidden>
       Click a position in the timeline to choose the developer and start time.
+    </p>
+  </section>
+
+  <section class="tif-panel tif-editor-section" aria-labelledby="tif-updated-schedule-title">
+    <h2 id="tif-updated-schedule-title" class="tif-visually-hidden">Updated schedule</h2>
+    <p id="tif-issue-drag-help" class="tif-visually-hidden" data-timeline-issue-move-status role="status" aria-live="polite">
+      Drag an issue to a new position. You can also focus it and use Alt + Shift + arrow keys. Moving shifts the schedule without automatically reassigning other issues.
     </p>
     <%= render "chart",
       timeline: @timeline,

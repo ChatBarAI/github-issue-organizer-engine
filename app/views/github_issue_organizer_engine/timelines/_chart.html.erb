@@ -141,14 +141,12 @@
                 aria-describedby="tif-issue-drag-help"
                 aria-keyshortcuts="Alt+Shift+ArrowLeft Alt+Shift+ArrowRight Alt+Shift+ArrowUp Alt+Shift+ArrowDown"
               <% end %>
-              style="grid-column: <%= start_column %> / <%= end_column %>; grid-row: 1"
-              title="<%= l segment_start, format: :long %> – <%= l segment_end, format: :long %>">
+              style="grid-column: <%= start_column %> / <%= end_column %>; grid-row: 1">
               <%= link_to item.title,
                 item.url,
                 target: "_blank",
                 rel: "noopener noreferrer",
-                draggable: (false if local_assigns[:editable_issues]),
-                title: "#{item.repository}##{item.issue_number} · #{item.title}" %>
+                draggable: (false if local_assigns[:editable_issues]) %>
               <% if item.github_assignee_matches_developer? %>
                 <span class="tif-github-assignee-marker"
                   title="Timeline developer matches the first GitHub assignee"
@@ -159,10 +157,17 @@
                   title="Manually assigned in this timeline"
                   aria-label="Manually assigned in this timeline">M</span>
               <% end %>
-              <span>
+              <span class="tif-timeline-task-meta">
                 <%= item.repository %>#<%= item.issue_number %> ·
                 <%= item.priority %> · <%= item.effort_hours / 8.0 %> developer-days
               </span>
+              <div class="tif-timeline-task-preview" aria-hidden="true">
+                <span class="tif-timeline-task-preview-title"><%= item.title %></span>
+                <span class="tif-timeline-task-preview-meta">
+                  <%= item.repository %>#<%= item.issue_number %> ·
+                  <%= item.priority %> · <%= item.effort_hours / 8.0 %> developer-days
+                </span>
+              </div>
             </article>
           <% end %>
         </div>

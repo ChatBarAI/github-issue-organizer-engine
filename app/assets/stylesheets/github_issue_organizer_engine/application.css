@@ -853,6 +853,74 @@
   transform: translateY(-2px);
 }
 
+.tif-timeline-task-preview {
+  position: absolute;
+  z-index: 5;
+  top: 6px;
+  left: 6px;
+  width: max(calc(100% + 2px), 280px);
+  min-height: calc(100% + 2px);
+  padding: 8px 9px;
+  border: 1px solid color-mix(in srgb, var(--tif-priority-color) 55%, var(--tif-border));
+  border-inline-start-width: 4px;
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--tif-priority-color) 11%, var(--tif-panel));
+  box-shadow: 0 8px 24px rgb(31 35 40 / 22%);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(4px) scale(0.98);
+  transform-origin: top left;
+  transition: opacity 140ms ease, transform 140ms ease, visibility 0s linear 140ms;
+  visibility: hidden;
+}
+
+.tif-timeline-task .tif-timeline-task-preview-title,
+.tif-timeline-task .tif-timeline-task-preview-meta {
+  overflow: visible;
+  text-overflow: initial;
+  white-space: normal;
+}
+
+.tif-timeline-task .tif-timeline-task-preview-title {
+  margin: 0;
+  color: var(--tif-accent);
+  font-size: 0.82rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.tif-timeline-task .tif-timeline-task-preview-meta {
+  margin-top: 4px;
+  color: var(--tif-muted);
+  font-size: 0.72rem;
+  font-weight: 400;
+  line-height: 1.4;
+}
+
+.tif-timeline-task:is(:hover, :focus, :focus-within) {
+  z-index: 5;
+}
+
+.tif-timeline-task:is(:hover, :focus, :focus-within) > .tif-timeline-task-preview {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  transition-delay: 60ms, 60ms, 0s;
+  visibility: visible;
+}
+
+.tif-timeline-track:last-child .tif-timeline-task-preview {
+  top: auto;
+  bottom: 6px;
+  transform: translateY(-4px) scale(0.98);
+  transform-origin: bottom left;
+}
+
+.tif-timeline-track:last-child
+  .tif-timeline-task:is(:hover, :focus, :focus-within)
+  > .tif-timeline-task-preview {
+  transform: translateY(0) scale(1);
+}
+
 .tif-timeline-unavailable {
   z-index: 1;
   display: flex;
@@ -952,8 +1020,17 @@
   margin: 0;
 }
 
+.tif-editor-section.tif-unavailability-section {
+  padding: var(--tif-panel-padding);
+  border: 1px solid color-mix(in srgb, var(--tif-accent) 45%, var(--tif-border));
+  border-radius: 12px;
+  background: var(--tif-panel);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tif-accent) 12%, transparent),
+    0 8px 24px rgba(31, 35, 40, 0.08);
+}
+
 .tif-unavailability-selection-prompt {
-  margin: 3px 3px 12px;
+  margin: 8px 0 0;
   padding: 10px 12px;
   border: 1px solid color-mix(in srgb, var(--tif-accent) 45%, var(--tif-border));
   border-radius: 7px;
@@ -969,6 +1046,14 @@
 
 .github-issue-organizer-engine.is-selecting-unavailability .tif-timeline-track * {
   cursor: crosshair;
+}
+
+.github-issue-organizer-engine.is-selecting-unavailability .tif-timeline-task-preview {
+  display: none;
+}
+
+.github-issue-organizer-engine.is-selecting-unavailability .tif-timeline-task {
+  z-index: 1;
 }
 
 .github-issue-organizer-engine.is-selecting-unavailability .tif-timeline-track::after {
