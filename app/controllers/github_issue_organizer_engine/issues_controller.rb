@@ -156,29 +156,13 @@ module GithubIssueOrganizerEngine
           developer_ids: result.developer_ids,
           query: query.filters,
           in_review_issues: result.in_review,
-          blocked_issues: result.blocked
+          blocked_issues: result.blocked,
+          needs_effort_issues: result.needs_labels.select do |issue|
+            issue["missing"] == [ "effort" ]
+          end
         )
 
-        result.scheduled.each do |item|
-          timeline.items.create!(
-            github_issue_id: item["github_issue_id"],
-            repository: item["repository"],
-            issue_number: item["issue_number"],
-            title: item["title"],
-            url: item["url"],
-            priority: item["priority"],
-            effort_hours: item["effort_hours"],
-            github_assignee_id: item["github_assignee_id"],
-            github_assignee_login: item["github_assignee_login"],
-            starts_on: item["starts_on"],
-            ends_on: item["ends_on"],
-            work_segments: item["work_segments"],
-            developer_id: item["developer_id"],
-            developer_position: item["developer_position"],
-            position: item["position"],
-            manually_assigned: item["manually_assigned"]
-          )
-        end
+        timeline.items.create!(result.scheduled.map { |item| timeline_item_attributes(item) })
 
         unavailability.each do |period|
           timeline.unavailabilities.create!(
@@ -190,6 +174,10 @@ module GithubIssueOrganizerEngine
 
         timeline
       end
+    end
+
+    def timeline_item_attributes(item)
+      item.slice(*TimelineItem.attribute_names)
     end
 
     def inherited_unavailability(developer_ids)

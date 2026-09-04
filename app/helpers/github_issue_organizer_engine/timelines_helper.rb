@@ -11,5 +11,15 @@ module GithubIssueOrganizerEngine
         "#{I18n.l(starts_on, format: "%B %-d, %Y")} – #{I18n.l(ends_on, format: "%B %-d, %Y")}"
       end
     end
+
+    def timeline_user_name(user, user_id)
+      user.try(:fullname).presence || user.try(:email).presence || "User ##{user_id}"
+    end
+
+    def timeline_status_label(timeline)
+      return "Draft edit" if timeline.draft? && timeline.source_timeline_id.present?
+
+      timeline.status.titleize
+    end
   end
 end

@@ -1,15 +1,16 @@
 module GithubIssueOrganizerEngine
   class TimelinesController < ApplicationController
-    before_action :set_timeline, only: [ :show, :edit, :update, :destroy, :make_current ]
+    before_action :set_timeline, only: [ :show, :edit, :edit_copy, :update, :destroy, :make_current ]
 
     def index
-      @timelines = Timeline.includes(:created_by, :items)
+      @timelines = Timeline.includes(:created_by, :edited_by, :source_timeline, :items)
         .order(Arel.sql(<<~SQL.squish), created_at: :desc)
           CASE github_issue_organizer_engine_timelines.status
           WHEN 'current' THEN 0
           WHEN 'draft' THEN 1
           ELSE 2 END
         SQL
+      @timeline_rows = TimelineRevisionList.new(@timelines).call
     end
 
     def show
@@ -19,6 +20,13 @@ module GithubIssueOrganizerEngine
       @unavailability = TimelineUnavailability.new
       @unavailability.unavailable_on = Date.current
       @unavailability.unavailable_at_time = "09:00"
+    end
+
+    def edit_copy
+      copy = TimelineCopy.new(timeline: @timeline, editor_id: current_host_user_id).call
+      redirect_to edit_timeline_path(copy), notice: "Draft edit created from timeline ##{@timeline.id}."
+    rescue ActiveRecord::RecordInvalid, ArgumentError => error
+      redirect_to timeline_path(@timeline), alert: error.message
     end
 
     def update
@@ -52,7 +60,7 @@ module GithubIssueOrganizerEngine
     private
 
     def set_timeline
-      @timeline = Timeline.includes(:items, :unavailabilities, :created_by).find(params[:id])
+      @timeline = Timeline.includes(:items, :unavailabilities, :created_by, :edited_by, :source_timeline).find(params[:id])
     end
 
     def timeline_params

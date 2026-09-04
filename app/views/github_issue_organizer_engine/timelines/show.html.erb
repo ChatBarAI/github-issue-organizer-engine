@@ -9,11 +9,20 @@
     <h1>Timeline #<%= @timeline.id %></h1>
     <div class="tif-timeline-heading-meta">
       <p>
-        <span class="tif-timeline-status is-<%= @timeline.status %>"><%= @timeline.status.titleize %></span> ·
+        <span class="tif-timeline-status is-<%= @timeline.status %>"><%= timeline_status_label(@timeline) %></span> ·
         Starts <%= l @timeline.starts_on, format: :long %> ·
         Ends <%= l @timeline.ends_on, format: :long %> ·
         <%= pluralize @timeline.developer_ids.size, "developer" %> ·
-        created <%= time_ago_in_words(@timeline.created_at) %> ago
+        created by <%= timeline_user_name(@timeline.created_by, @timeline.created_by_id) %>
+        on <%= l @timeline.original_created_at, format: :long %>
+        <% if @timeline.edited_by_id.present? %>
+          · edited by <%= timeline_user_name(@timeline.edited_by, @timeline.edited_by_id) %>
+          on <%= l @timeline.created_at, format: :long %>
+        <% end %>
+        <% if @timeline.source_timeline_id.present? %>
+          · revision of Timeline #<%= @timeline.source_timeline_id %>
+        <% end %>
+        · <%= time_ago_in_words(@timeline.created_at) %> ago
       </p>
       <% if @timeline.items.any? %>
         <label class="tif-switch" title="Make Saturday and Sunday narrower to show more days">
@@ -34,7 +43,11 @@
           class: "tif-account-link",
           form: { data: { turbo_confirm: "Set this draft as the current timeline? The existing current timeline will become obsolete." } } %>
       <% end %>
-      <%= link_to "Edit", edit_timeline_path(@timeline), class: "tif-account-link" %>
+      <%= button_to "Edit",
+        edit_copy_timeline_path(@timeline),
+        method: :post,
+        class: "tif-account-link",
+        form: { data: { turbo_confirm: "Create a new draft copy to edit?" } } %>
       <%= link_to "All timelines", timelines_path, class: "tif-account-link" %>
     </nav>
   </header>

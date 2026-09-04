@@ -1230,6 +1230,29 @@
   margin: 0 0 12px;
 }
 
+.tif-unscheduled-groups {
+  display: grid;
+  gap: 16px;
+}
+
+.tif-informational-issues .tif-unscheduled-group-heading {
+  margin: 0 0 8px;
+  color: var(--tif-muted);
+  font-size: 0.88rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.tif-informational-issues .tif-unscheduled-group .tif-issue-card-grid {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.tif-unscheduled-group .tif-issue-card {
+  flex: 1 1 240px;
+  max-width: 340px;
+}
+
 .tif-informational-card.is-review {
   border-color: color-mix(in srgb, #2684ff 55%, var(--tif-border));
 }
@@ -1246,6 +1269,15 @@
 .tif-informational-card.is-blocked .tif-informational-card-badge {
   background: color-mix(in srgb, var(--tif-danger) 16%, var(--tif-panel));
   color: var(--tif-danger);
+}
+
+.tif-informational-card.is-missing-effort {
+  border-color: color-mix(in srgb, #bf8700 55%, var(--tif-border));
+}
+
+.tif-informational-card.is-missing-effort .tif-informational-card-badge {
+  background: color-mix(in srgb, #bf8700 16%, var(--tif-panel));
+  color: #bf8700;
 }
 
 .tif-timeline-issues {
@@ -1413,13 +1445,27 @@
 }
 
 .tif-saved-item {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 10px;
+  padding: 10px 10px 10px calc(10px + var(--tif-revision-indent, 0px));
   border: 1px solid var(--tif-border);
   border-radius: 8px;
+}
+
+.tif-saved-item.is-earlier-revision::before {
+  position: absolute;
+  top: -9px;
+  bottom: 50%;
+  left: var(--tif-revision-connector-left);
+  width: 14px;
+  border-bottom: 1px solid color-mix(in srgb, var(--tif-accent) 45%, var(--tif-border));
+  border-left: 1px solid color-mix(in srgb, var(--tif-accent) 45%, var(--tif-border));
+  border-bottom-left-radius: 7px;
+  content: "";
+  pointer-events: none;
 }
 
 .tif-saved-item h2,

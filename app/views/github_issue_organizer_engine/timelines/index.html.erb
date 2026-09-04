@@ -24,18 +24,28 @@
   <section class="tif-panel">
     <% if @timelines.any? %>
       <div class="tif-saved-list">
-        <% @timelines.each do |timeline| %>
-          <article class="tif-saved-item">
+        <% @timeline_rows.each do |row| %>
+          <% timeline = row.timeline %>
+          <article class="tif-saved-item <%= "is-earlier-revision" if row.depth.positive? %>"
+            style="--tif-revision-indent: <%= row.depth * 24 %>px; --tif-revision-connector-left: <%= 15 + ([row.depth - 1, 0].max * 24) %>px">
             <div>
               <h2>
                 <%= link_to compact_date_range(timeline.starts_on, timeline.ends_on || timeline.starts_on), timeline_path(timeline) %>
-                <span class="tif-timeline-status is-<%= timeline.status %>"><%= timeline.status.titleize %></span>
+                <span class="tif-timeline-status is-<%= timeline.status %>"><%= timeline_status_label(timeline) %></span>
               </h2>
               <p>
                 Timeline #<%= timeline.id %> ·
                 <%= pluralize timeline.developer_ids.size, "developer" %> ·
                 <%= pluralize timeline.items.size, "scheduled issue" %> ·
-                created by <%= timeline.created_by.try(:fullname).presence || timeline.created_by.try(:email) || "User ##{timeline.created_by_id}" %>
+                created by <%= timeline_user_name(timeline.created_by, timeline.created_by_id) %>
+                on <%= l timeline.original_created_at, format: :long %>
+                <% if timeline.edited_by_id.present? %>
+                  · edited by <%= timeline_user_name(timeline.edited_by, timeline.edited_by_id) %>
+                  on <%= l timeline.created_at, format: :long %>
+                <% end %>
+                <% if timeline.source_timeline_id.present? %>
+                  · revision of Timeline #<%= timeline.source_timeline_id %>
+                <% end %>
               </p>
             </div>
             <div class="tif-saved-item-actions">

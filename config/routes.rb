@@ -13,6 +13,7 @@ GithubIssueOrganizerEngine::Engine.routes.draw do
   resource :settings, only: [ :show, :update ]
   resources :timelines, only: [ :index, :show, :edit, :update, :destroy ] do
     delete :destroy_drafts, on: :collection
+    post :edit_copy, on: :member
     patch :make_current, on: :member
     resources :items, only: [ :update ], controller: "timeline_items"
     resources :unavailabilities,

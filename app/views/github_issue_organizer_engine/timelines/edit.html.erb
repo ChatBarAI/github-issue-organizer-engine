@@ -8,7 +8,19 @@
   <header class="tif-heading tif-timeline-heading">
     <h1>Edit timeline #<%= @timeline.id %></h1>
     <div class="tif-timeline-heading-meta">
-      <p><span class="tif-timeline-status is-<%= @timeline.status %>"><%= @timeline.status.titleize %></span> · Drag issues to reorder a developer's work or move it directly to another developer.</p>
+      <p>
+        <span class="tif-timeline-status is-<%= @timeline.status %>"><%= timeline_status_label(@timeline) %></span> ·
+        created by <%= timeline_user_name(@timeline.created_by, @timeline.created_by_id) %>
+        on <%= l @timeline.original_created_at, format: :long %>
+        <% if @timeline.edited_by_id.present? %>
+          · edited by <%= timeline_user_name(@timeline.edited_by, @timeline.edited_by_id) %>
+          on <%= l @timeline.created_at, format: :long %>
+        <% end %>
+        <% if @timeline.source_timeline_id.present? %>
+          · revision of Timeline #<%= @timeline.source_timeline_id %>
+        <% end %>
+        · Drag issues to reorder a developer's work or move it directly to another developer.
+      </p>
       <% if @timeline.items.any? %>
         <label class="tif-switch" title="Make Saturday and Sunday narrower to show more days">
           <input type="checkbox"

@@ -9,6 +9,22 @@ module GithubIssueOrganizerEngine
       class_name: GithubIssueOrganizerEngine.configuration.user_class_name,
       inverse_of: false
 
+    belongs_to :edited_by,
+      class_name: GithubIssueOrganizerEngine.configuration.user_class_name,
+      optional: true,
+      inverse_of: false
+
+    belongs_to :source_timeline,
+      class_name: "GithubIssueOrganizerEngine::Timeline",
+      optional: true,
+      inverse_of: :derived_timelines
+
+    has_many :derived_timelines,
+      class_name: "GithubIssueOrganizerEngine::Timeline",
+      foreign_key: :source_timeline_id,
+      dependent: :nullify,
+      inverse_of: :source_timeline
+
     has_many :items,
       -> { order(:position) },
       class_name: "GithubIssueOrganizerEngine::TimelineItem",
@@ -30,6 +46,10 @@ module GithubIssueOrganizerEngine
       items.map(&:ends_on).compact.max
     end
 
+    def original_created_at
+      source_timeline&.original_created_at || created_at
+    end
+
     def make_current!
       raise ArgumentError, "Only a draft timeline can be made current" unless draft?
 
@@ -38,6 +58,7 @@ module GithubIssueOrganizerEngine
           status: self.class.statuses.fetch(:obsolete),
           updated_at: Time.current
         )
+        source_timeline.update!(status: :obsolete) if source_timeline&.draft?
         update!(status: :current)
       end
     end
