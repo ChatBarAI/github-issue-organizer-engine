@@ -21,6 +21,8 @@
     </nav>
   </header>
 
+  <%= render "issue_history", snapshots: @issue_snapshots %>
+
   <section class="tif-panel">
     <% if @timelines.any? %>
       <div class="tif-saved-list">

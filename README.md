@@ -94,6 +94,20 @@ bin/rails railties:install:migrations FROM=github_issue_organizer_engine
 bin/rails db:migrate
 ```
 
+Making a draft timeline current retrieves all open issues from the configured
+repositories and saves a timestamped count for each priority, plus “No priority”.
+This includes blocked, review, and unsized issues regardless of the draft's search
+filters. Pull requests are excluded; issues with multiple priority labels count
+once under their highest priority. Retrieval must succeed before activation, and
+the snapshot and status change are saved in one transaction.
+
+The Timelines page shows an SVG chart of total open issues and each priority over
+time, with an expandable table of exact counts and repository lists. Snapshots
+are recorded only on activation, survive timeline deletion, and are not backfilled
+for older timelines. Changes to configured repositories change the scope of later
+snapshots. Existing installations must install and run the new migration using
+the commands above.
+
 The generator adds an initializer and mounts the engine at
 `/admin/github-issues`. Review both changes before starting the application.
 

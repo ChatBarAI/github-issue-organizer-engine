@@ -50,16 +50,22 @@ module GithubIssueOrganizerEngine
       source_timeline&.original_created_at || created_at
     end
 
-    def make_current!
+    def make_current!(github_client:, repositories:)
       raise ArgumentError, "Only a draft timeline can be made current" unless draft?
 
+      counts = IssuePriorityCounts.call(github_client.open_issues)
       self.class.transaction do
+        lock!
+        raise ArgumentError, "Only a draft timeline can be made current" unless draft?
+
         self.class.lock.where(status: :current).where.not(id: id).update_all(
           status: self.class.statuses.fetch(:obsolete),
           updated_at: Time.current
         )
         source_timeline.update!(status: :obsolete) if source_timeline&.draft?
         update!(status: :current)
+        IssueSnapshot.create!(timeline: self, captured_at: Time.current,
+          repositories: repositories, priority_counts: counts)
       end
     end
 

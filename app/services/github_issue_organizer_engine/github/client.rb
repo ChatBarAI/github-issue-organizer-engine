@@ -46,6 +46,26 @@ module GithubIssueOrganizerEngine
         request_json("/users/#{CGI.escape(login)}")
       end
 
+      def open_issues
+        raise ArgumentError, "Configure at least one repository in Settings" if @repositories.empty?
+
+        @repositories.flat_map do |repository|
+          issues = []
+          page = 1
+          loop do
+            items = request_json("/repos/#{repository}/issues",
+              state: "open", sort: "created", direction: "asc", per_page: PER_PAGE, page: page)
+            raise Error, "GitHub returned an invalid issue list" unless items.is_a?(Array)
+
+            issues.concat(items.reject { |item| item.key?("pull_request") })
+            break if items.size < PER_PAGE
+
+            page += 1
+          end
+          issues
+        end.uniq { |issue| issue.fetch("id") }
+      end
+
       private
 
       def search_repository(query, repository)

@@ -11,6 +11,7 @@ module GithubIssueOrganizerEngine
           ELSE 2 END
         SQL
       @timeline_rows = TimelineRevisionList.new(@timelines).call
+      @issue_snapshots = IssueSnapshot.order(:captured_at, :id).to_a
     end
 
     def show
@@ -51,9 +52,9 @@ module GithubIssueOrganizerEngine
     end
 
     def make_current
-      @timeline.make_current!
+      @timeline.make_current!(github_client: github_client, repositories: configured_repositories)
       redirect_to timelines_path, notice: "Timeline ##{@timeline.id} is now current."
-    rescue ActiveRecord::RecordInvalid, ActiveRecord::RecordNotUnique, ArgumentError => error
+    rescue ActiveRecord::RecordInvalid, ActiveRecord::RecordNotUnique, ArgumentError, Github::Client::Error => error
       redirect_to timelines_path, alert: error.message
     end
 

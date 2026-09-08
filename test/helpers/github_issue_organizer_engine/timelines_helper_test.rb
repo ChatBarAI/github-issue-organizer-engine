@@ -1,9 +1,33 @@
 require "test_helper"
 require_relative "../../../app/helpers/github_issue_organizer_engine/timelines_helper"
+require_relative "../../../app/services/github_issue_organizer_engine/issue_priority_counts"
 
 module GithubIssueOrganizerEngine
   class TimelinesHelperTest < Minitest::Test
     include TimelinesHelper
+
+    Snapshot = Struct.new(:captured_at, :priority_counts) do
+      def total
+        priority_counts.values.sum
+      end
+    end
+
+    def test_chart_uses_elapsed_time_and_total_count_for_axes
+      time = Time.utc(2026, 9, 1)
+      snapshots = [0, 1, 4].map do |days|
+        Snapshot.new(time + days.days, { "Priority: High" => 4, "No priority" => 6 })
+      end
+      series = issue_history_series(snapshots)
+
+      assert_equal [60, 250, 820], series.first[:points].map { |point| point[:x] }
+      assert_equal [40, 40, 40], series.first[:points].map { |point| point[:y] }
+      assert_equal 6, series.size
+    end
+
+    def test_chart_handles_one_empty_snapshot
+      series = issue_history_series([Snapshot.new(Time.current, IssuePriorityCounts.call([]))])
+      assert series.all? { |entry| entry[:points].sole.values_at(:x, :y) == [440, 260] }
+    end
 
     def test_formats_a_single_day_once
       assert_equal "August 29, 2026", compact_date_range(Date.new(2026, 8, 29), Date.new(2026, 8, 29))

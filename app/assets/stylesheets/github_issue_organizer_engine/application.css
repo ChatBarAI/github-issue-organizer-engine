@@ -1611,3 +1611,38 @@
     grid-template-columns: 1fr;
   }
 }
+.tif-issue-history-chart {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.tif-issue-history-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding: 0;
+  list-style: none;
+}
+
+.tif-issue-history-legend li {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.tif-issue-history-legend span {
+  width: 0.8rem;
+  height: 0.8rem;
+  border-radius: 50%;
+}
+
+.tif-issue-history-table {
+  overflow-x: auto;
+}
+
+.tif-issue-history-table th,
+.tif-issue-history-table td {
+  padding: 0.5rem;
+  text-align: left;
+}
