@@ -20,6 +20,10 @@ class HostRouteHelpersTest < ActionDispatch::IntegrationTest
     assert_select "a[href='/admin']", text: "Admin"
     assert_select "a[href='/users/sign_out']", text: "Sign out"
     assert_select "h1", text: "GitHub Issue Organizer"
+    assert_select "html", count: 1
+    assert_select "head link[href*='github_issue_organizer_engine/application'][rel='stylesheet']", count: 1
+    assert_select "head script[src*='github_issue_organizer_engine/application'][defer][data-turbo-track='reload']", count: 1
+    assert_select "title", text: "GitHub Issue Organizer"
     assert_select "a[href='/admin/github-issues/settings']", text: "Settings"
     assert_select "input#tif-developer-count", count: 0
     assert_select "input#tif-save-timeline", count: 0

@@ -1,44 +1,61 @@
-<section class="tif-panel tif-issue-history">
+<section class="tif-panel tif-issue-history" data-issue-history>
   <h2 title="All open issues across configured repositories, recorded whenever a timeline becomes current.">Open issues over time</h2>
   <% if snapshots.empty? %>
     <p class="tif-help">Set a draft as current to record the first snapshot.</p>
   <% else %>
     <% series = issue_history_series(snapshots) %>
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 310" role="img" aria-labelledby="issue-history-title issue-history-description" class="tif-issue-history-chart">
+    <p class="tif-help">Priority areas add up to the total. Select a legend item to highlight it.</p>
+    <div class="tif-issue-history-plot">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 200" role="img" aria-labelledby="issue-history-title issue-history-description" class="tif-issue-history-chart">
       <title id="issue-history-title">Open issues over time by priority</title>
-      <desc id="issue-history-description">Counts at each timeline activation. Exact counts and repositories are listed in the snapshot history below.</desc>
+      <desc id="issue-history-description">Stacked priority counts at each timeline activation, with a total line. Exact counts and repositories are listed in the snapshot history below.</desc>
       <% maximum = [snapshots.map(&:total).max, 1].max %>
-      <% [0, (maximum / 2.0).ceil, maximum].uniq.each do |count| %>
-        <% y = 260 - 220.0 * count / maximum %>
-        <line x1="60" y1="<%= y %>" x2="820" y2="<%= y %>" stroke="currentColor" opacity="0.15" />
-        <text x="48" y="<%= y + 5 %>" text-anchor="end" fill="currentColor" font-size="14"><%= count %></text>
+      <% (0..5).map { |index| (maximum * index / 5.0).ceil }.uniq.each do |count| %>
+        <% y = 170 - 150.0 * count / maximum %>
+        <line x1="40" y1="<%= y %>" x2="780" y2="<%= y %>" stroke="currentColor" opacity="0.1" />
+        <text x="35" y="<%= y + 4 %>" text-anchor="end" fill="currentColor" font-size="10"><%= count %></text>
       <% end %>
-      <% series.each do |entry| %>
-        <polyline points="<%= entry[:points].map { |point| "#{point[:x]},#{point[:y]}" }.join(' ') %>" fill="none" stroke="<%= entry[:color] %>" stroke-width="<%= entry[:label] == 'Total' ? 3 : 2 %>" />
-        <% entry[:points].each do |point| %>
-          <circle cx="<%= point[:x] %>" cy="<%= point[:y] %>" r="4" fill="<%= entry[:color] %>">
-            <title><%= entry[:label] %>: <%= point[:count] %> · <%= l point[:captured_at], format: :long %></title>
-          </circle>
-        <% end %>
+      <text x="40" y="12" fill="currentColor" font-size="10">Open issues</text>
+      <% series.reverse_each do |entry| %>
+        <g data-history-series="<%= entry[:label] %>">
+          <% if entry[:area] %>
+            <polygon points="<%= entry[:area][:polygon].map { |point| "#{point[:x]},#{point[:y]}" }.join(' ') %>" fill="<%= entry[:color] %>" fill-opacity="0.65" />
+          <% end %>
+          <% plotted_points = entry[:area] ? entry[:area][:top] : entry[:points] %>
+          <polyline points="<%= plotted_points.map { |point| "#{point[:x]},#{point[:y]}" }.join(' ') %>" fill="none" stroke="<%= entry[:color] %>" stroke-width="<%= entry[:label] == 'Total' ? 3 : 1 %>" stroke-linejoin="round" vector-effect="non-scaling-stroke" />
+          <% plotted_points.each_with_index do |point, index| %>
+            <circle cx="<%= point[:x] %>" cy="<%= point[:y] %>" r="<%= snapshots.size == 1 ? 4 : 2 %>" fill="<%= entry[:color] %>">
+              <title><%= entry[:label] %>: <%= entry[:points][index][:count] %> · <%= l snapshots[index].captured_at, format: :long %></title>
+            </circle>
+          <% end %>
+        </g>
       <% end %>
-      <text x="60" y="292" fill="currentColor" font-size="14"><%= l snapshots.first.captured_at, format: :short %></text>
-      <% if snapshots.size > 1 %>
-        <text x="820" y="292" text-anchor="end" fill="currentColor" font-size="14"><%= l snapshots.last.captured_at, format: :short %></text>
+      <line data-history-guide x1="40" x2="40" y1="20" y2="170" stroke="currentColor" stroke-dasharray="3 3" visibility="hidden" />
+      <% time_format = snapshots.last.captured_at - snapshots.first.captured_at < 4.minutes ? "%H:%M:%S" : "%H:%M" %>
+      <% issue_history_ticks(snapshots).each do |tick| %>
+        <text class="tif-issue-history-date" x="<%= tick[:x] %>" y="182" text-anchor="<%= tick[:anchor] %>" fill="currentColor" font-size="10">
+          <tspan x="<%= tick[:x] %>"><%= l tick[:captured_at], format: "%d %b" %></tspan>
+          <tspan x="<%= tick[:x] %>" dy="12"><%= l tick[:captured_at], format: time_format %></tspan>
+        </text>
       <% end %>
     </svg>
+    </div>
     <ul class="tif-issue-history-legend" aria-label="Chart legend">
       <% series.each do |entry| %>
-        <li><span style="background: <%= entry[:color] %>" aria-hidden="true"></span><%= entry[:label] %></li>
+        <li><button type="button" data-history-highlight="<%= entry[:label] %>" aria-pressed="false" aria-label="Highlight <%= entry[:label] %>"><span style="background: <%= entry[:color] %>" aria-hidden="true"></span><%= entry[:label] %><strong><%= entry[:points].last[:count] %></strong></button></li>
       <% end %>
     </ul>
+    <div class="tif-issue-history-inspector" hidden>
+      <output data-history-readout aria-live="polite"></output>
+    </div>
     <details>
       <summary>Snapshot history and exact counts</summary>
       <div class="tif-issue-history-table">
         <table>
           <thead><tr><th scope="col">Recorded</th><th scope="col">Repositories</th><% series.each do |entry| %><th scope="col"><%= entry[:label] %></th><% end %></tr></thead>
           <tbody>
-            <% snapshots.reverse_each do |snapshot| %>
-              <tr>
+            <% snapshots.reverse_each.with_index do |snapshot, reverse_index| %>
+              <tr data-history-record data-history-x="<%= series.first[:points][snapshots.size - 1 - reverse_index][:x] %>">
                 <th scope="row"><%= l snapshot.captured_at, format: :long %></th>
                 <td><%= snapshot.repositories.join(', ') %></td>
                 <td><%= snapshot.total %></td>

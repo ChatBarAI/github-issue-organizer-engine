@@ -1,0 +1,5 @@
+<% content_for :head do %>
+  <%= stylesheet_link_tag "github_issue_organizer_engine/application", "data-turbo-track": "reload" %>
+  <%= javascript_include_tag "github_issue_organizer_engine/application", defer: true, "data-turbo-track": "reload" %>
+<% end %>
+<%= render template: "layouts/#{GithubIssueOrganizerEngine.configuration.layout}" %>

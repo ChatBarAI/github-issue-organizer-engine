@@ -154,6 +154,11 @@ application's authentication helpers and current user.
 The engine uses the host application's Rails process, routes, database, and
 asset pipeline. It does not require a separate web service or container.
 
+The shared engine layout includes the engine's CSS and JavaScript, then renders
+the host layout selected by `config.layout`. The host layout must include
+`<%= yield :head %>` inside its `<head>` and `<%= yield %>` for page content.
+Engine pages do not need their own asset include tags.
+
 ### Host route helpers in inherited controllers and layouts
 
 The engine is isolated and its controllers inherit from the host application's

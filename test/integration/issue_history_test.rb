@@ -15,6 +15,9 @@ class IssueHistoryTest < ActionDispatch::IntegrationTest
     render_history(snapshots)
 
     assert_response :success, request.env["action_dispatch.exception"]&.full_message
+    assert_select "head script[src*='github_issue_organizer_engine/application'][defer]", count: 1
+    assert_select "head link[href*='github_issue_organizer_engine/application']", count: 1
+    assert_select "title", text: "Saved timelines · Team Issue Finder", count: 1
     assert_select "svg[role='img'] title#issue-history-title", text: "Open issues over time by priority"
     assert_select "svg polyline", count: 6
     assert_select "svg circle", count: 6

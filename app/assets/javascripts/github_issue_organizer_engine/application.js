@@ -984,7 +984,64 @@
     });
   };
 
+  const initializeIssueHistory = root => {
+    if (root.dataset.historyInitialized) return;
+    const svg = root.querySelector("svg");
+    if (!svg) return;
+    root.dataset.historyInitialized = "true";
+    const guide = root.querySelector("[data-history-guide]");
+    const records = Array.from(root.querySelectorAll("[data-history-record]")).reverse();
+    const buttons = Array.from(root.querySelectorAll("[data-history-highlight]"));
+    const readout = root.querySelector("[data-history-readout]");
+    root.querySelector(".tif-issue-history-inspector").hidden = false;
+    let selectedIndex = records.length - 1;
+    svg.setAttribute("tabindex", "0");
+    svg.setAttribute("aria-keyshortcuts", "ArrowLeft ArrowRight Home End");
+    const inspect = index => {
+      const record = records[index];
+      selectedIndex = index;
+      guide.setAttribute("x1", record.dataset.historyX);
+      guide.setAttribute("x2", record.dataset.historyX);
+      guide.setAttribute("visibility", "visible");
+      const counts = buttons.map((button, i) => `${button.dataset.historyHighlight}: ${record.cells[i + 2].textContent.trim()}`);
+      readout.textContent = `${record.cells[0].textContent.trim()} · ${counts.join(" · ")}`;
+    };
+    svg.addEventListener("keydown", event => {
+      const indexes = {
+        ArrowLeft: Math.max(0, selectedIndex - 1),
+        ArrowRight: Math.min(records.length - 1, selectedIndex + 1),
+        Home: 0,
+        End: records.length - 1
+      };
+      if (!(event.key in indexes)) return;
+      event.preventDefault();
+      inspect(indexes[event.key]);
+    });
+    svg.addEventListener("pointermove", event => {
+      const matrix = svg.getScreenCTM();
+      if (!matrix) return;
+      const point = svg.createSVGPoint();
+      point.x = event.clientX;
+      point.y = event.clientY;
+      const x = point.matrixTransform(matrix.inverse()).x;
+      let nearest = 0;
+      records.forEach((record, index) => {
+        if (Math.abs(Number(record.dataset.historyX) - x) < Math.abs(Number(records[nearest].dataset.historyX) - x)) nearest = index;
+      });
+      if (selectedIndex !== nearest) inspect(nearest);
+    });
+    buttons.forEach(button => button.addEventListener("click", () => {
+      const selected = button.getAttribute("aria-pressed") !== "true" ? button.dataset.historyHighlight : null;
+      buttons.forEach(item => item.setAttribute("aria-pressed", String(item.dataset.historyHighlight === selected)));
+      root.querySelectorAll("[data-history-series]").forEach(series => {
+        series.style.opacity = selected && series.dataset.historySeries !== selected ? "0.15" : "1";
+      });
+    }));
+    inspect(records.length - 1);
+  };
+
   const initializeAll = () => {
+    document.querySelectorAll("[data-issue-history]").forEach(initializeIssueHistory);
     initializeCompactWeekendToggles();
     document.querySelectorAll(".github-issue-organizer-engine[data-timeline-url]").forEach(initialize);
     document.querySelectorAll(".github-issue-organizer-engine[data-timeline-details]").forEach(initializeTimelineDetails);
@@ -995,6 +1052,11 @@
   document.addEventListener("DOMContentLoaded", initializeAll);
   document.addEventListener("turbo:load", initializeAll);
   document.addEventListener("turbo:before-cache", () => {
+    document.querySelectorAll("[data-issue-history]").forEach(root => {
+      delete root.dataset.historyInitialized;
+      root.querySelectorAll("[data-history-highlight]").forEach(button => button.setAttribute("aria-pressed", "false"));
+      root.querySelectorAll("[data-history-series]").forEach(series => series.style.opacity = "1");
+    });
     document.querySelectorAll(".github-issue-organizer-engine[data-initialized]").forEach(root => {
       delete root.dataset.initialized;
     });

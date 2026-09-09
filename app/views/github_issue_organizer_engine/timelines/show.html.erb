@@ -1,8 +1,4 @@
 <% content_for :title, "Timeline ##{@timeline.id} · Team Issue Finder" %>
-<% content_for :head do %>
-  <%= stylesheet_link_tag "github_issue_organizer_engine/application", "data-turbo-track": "reload" %>
-  <%= javascript_include_tag "github_issue_organizer_engine/application", defer: true, "data-turbo-track": "reload" %>
-<% end %>
 
 <div class="github-issue-organizer-engine" data-timeline-details>
   <header class="tif-heading tif-timeline-heading">

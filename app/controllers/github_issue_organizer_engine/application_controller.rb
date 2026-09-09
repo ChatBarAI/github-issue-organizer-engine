@@ -2,7 +2,7 @@ module GithubIssueOrganizerEngine
   class ApplicationController < ::ApplicationController
     before_action :authorize_host_user!
 
-    layout -> { GithubIssueOrganizerEngine.configuration.layout }
+    layout -> { "github_issue_organizer_engine/application" if GithubIssueOrganizerEngine.configuration.layout }
 
     private
 

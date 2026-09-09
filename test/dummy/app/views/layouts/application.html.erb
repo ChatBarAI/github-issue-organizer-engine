@@ -1,5 +1,9 @@
 <!DOCTYPE html>
 <html>
+  <head>
+    <title><%= content_for :title %></title>
+    <%= yield :head %>
+  </head>
   <body>
     <nav>
       <%= link_to "Admin", main_app.admin_root_path %>
