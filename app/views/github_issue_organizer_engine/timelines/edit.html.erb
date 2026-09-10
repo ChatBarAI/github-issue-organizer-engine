@@ -73,9 +73,18 @@
 
   <section class="tif-panel tif-editor-section" aria-labelledby="tif-updated-schedule-title">
     <h2 id="tif-updated-schedule-title" class="tif-visually-hidden">Updated schedule</h2>
-    <p id="tif-issue-drag-help" class="tif-visually-hidden" data-timeline-issue-move-status role="status" aria-live="polite">
-      Drag an issue to a new position. You can also focus it and use Alt + Shift + arrow keys. Moving shifts the schedule without automatically reassigning other issues.
-    </p>
+    <details class="tif-drag-help">
+      <summary>How to move issues</summary>
+      <p id="tif-issue-drag-help">Drop into empty time to place an issue without shifting other work. Drop onto another issue to reorder the queue, or onto another developer’s row to reassign. For keyboard controls, focus an issue and press Alt + Shift + an arrow key.</p>
+    </details>
+    <div class="tif-move-feedback" data-timeline-issue-move-status hidden>
+      <span class="tif-move-feedback-icon" data-move-status-icon aria-hidden="true">i</span>
+      <div class="tif-move-feedback-copy" role="status" aria-live="polite" aria-atomic="true">
+        <strong data-move-status-title></strong>
+        <span data-move-status-message></span>
+      </div>
+      <button type="button" class="tif-move-feedback-dismiss" data-dismiss-move-status aria-label="Dismiss move message">×</button>
+    </div>
     <%= render "chart",
       timeline: @timeline,
       editable_unavailability: true,

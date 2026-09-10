@@ -22,6 +22,7 @@ module GithubIssueOrganizerEngine
 
         issue.merge(
           "carried_starts_on" => item.starts_on.iso8601,
+          "carried_work_segments" => Array(item.work_segments),
           "carried_developer_id" => item.developer_id
         )
       end

@@ -17,6 +17,8 @@ module GithubIssueOrganizerEngine
       :effort_hours,
       :position,
       :starts_on,
+      :ends_on,
+      :work_segments,
       keyword_init: true
     ) do
       def update!(attributes)
@@ -70,6 +72,7 @@ module GithubIssueOrganizerEngine
     def test_keeps_carried_start_dates_when_rescheduling
       item = fake_item(id: 1, issue_number: 11, position: 1)
       item.starts_on = Date.new(2026, 8, 24)
+      item.work_segments = [{"starts_at" => "2026-08-24T09:00:00+00:00", "ends_at" => "2026-08-24T11:00:00+00:00"}]
       timeline = FakeTimeline.new(
         starts_on: Date.new(2026, 8, 31), developer_ids: ["developer-a"],
         items: FakeItems.new([item]), unavailabilities: []
@@ -78,6 +81,41 @@ module GithubIssueOrganizerEngine
       TimelineRescheduler.new(timeline: timeline, starts_on: Date.new(2026, 9, 1)).call
 
       assert_equal "2026-08-24", item.starts_on
+    end
+
+    def test_advancing_boundary_and_repeated_edits_preserve_hours
+      item = fake_item(id: 1, issue_number: 50, position: 1)
+      item.work_segments = [{"starts_at" => "2026-08-31T09:00:00+00:00", "ends_at" => "2026-08-31T11:00:00+00:00"}]
+      timeline = FakeTimeline.new(starts_on: Date.new(2026, 8, 31),
+        developer_ids: ["developer-a"], items: FakeItems.new([item]), unavailabilities: [])
+      TimelineRescheduler.new(timeline: timeline, starts_on: Date.new(2026, 9, 1)).call
+      first_segments = item.work_segments.deep_dup
+      assert_equal "2026-09-01T11:00:00+00:00", first_segments.last["ends_at"]
+      # ActiveRecord casts persisted dates back to Date values.
+      item.starts_on = Date.parse(item.starts_on)
+      TimelineRescheduler.new(timeline: timeline).call
+      assert_equal first_segments, item.work_segments
+    end
+
+    def test_recalculates_stale_dates_after_preceding_work_was_shortened
+      preceding = fake_item(id: 1, issue_number: 50, position: 1)
+      preceding.effort_hours = 40
+      preceding.starts_on = Date.new(2026, 9, 8)
+      preceding.work_segments = (8..10).map do |day|
+        date = "2026-09-#{day.to_s.rjust(2, '0')}"
+        {"starts_at" => "#{date}T09:00:00+00:00", "ends_at" => "#{date}T17:00:00+00:00"}
+      end
+      moving = fake_item(id: 2, issue_number: 49, position: 2)
+      moving.effort_hours = 40
+      moving.starts_on = Date.new(2026, 9, 21)
+      timeline = FakeTimeline.new(starts_on: Date.new(2026, 9, 11),
+        developer_ids: ["developer-a"], items: FakeItems.new([preceding, moving]), unavailabilities: [])
+
+      TimelineRescheduler.new(timeline: timeline, allow_reassignment: false, ordered_item_ids: [1, 2]).call
+
+      assert_equal "2026-09-14", preceding.ends_on
+      assert_equal "2026-09-15", moving.starts_on
+      assert_equal "2026-09-21", moving.ends_on
     end
 
     private

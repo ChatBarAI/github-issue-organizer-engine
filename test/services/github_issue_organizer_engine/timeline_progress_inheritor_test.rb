@@ -3,16 +3,16 @@ require_relative "../../../app/services/github_issue_organizer_engine/timeline_p
 
 module GithubIssueOrganizerEngine
   class TimelineProgressInheritorTest < Minitest::Test
-    Item = Struct.new(:repository, :issue_number, :starts_on, :developer_id)
+    Item = Struct.new(:repository, :issue_number, :starts_on, :developer_id, :work_segments)
     CurrentTimeline = Struct.new(:items)
 
-    def test_preserves_the_start_date_through_scheduling_without_changing_future_capacity
+    def test_preserves_recorded_history_and_schedules_only_remaining_effort
       original = issue
       inherited = inherit([original])
       result = Scheduler.new(issues: inherited, starts_on: "2026-09-10", developer_ids: ["alice"]).call
       assert_equal "2026-09-03", result.scheduled.first.fetch("starts_on")
       assert_equal "2026-09-10", result.scheduled.first.fetch("ends_on")
-      assert_equal "2026-09-10T09:00:00+00:00", result.scheduled.first.fetch("work_segments").first.fetch("starts_at")
+      assert_equal "2026-09-03T09:00:00+00:00", result.scheduled.first.fetch("work_segments").first.fetch("starts_at")
       refute original.key?("carried_starts_on")
     end
 
@@ -47,8 +47,8 @@ module GithubIssueOrganizerEngine
         continuation, new_work = result.scheduled
         assert_equal 1, continuation.fetch("issue_number")
         assert_equal "alice", continuation.fetch("developer_id")
-        assert_equal "2026-09-10T09:00:00+00:00", continuation.fetch("work_segments").first.fetch("starts_at")
-        assert_equal "2026-09-11", new_work.fetch("starts_on")
+        assert_equal "2026-09-03T09:00:00+00:00", continuation.fetch("work_segments").first.fetch("starts_at")
+        assert_equal "2026-09-10", new_work.fetch("starts_on")
       end
     end
 
@@ -65,7 +65,7 @@ module GithubIssueOrganizerEngine
     def inherit(issues, start: "2026-09-10")
       TimelineProgressInheritor.new(
         issues: issues,
-        timeline: CurrentTimeline.new([Item.new("example/repo", 1, Date.new(2026, 9, 3), "ALICE")]),
+        timeline: CurrentTimeline.new([Item.new("example/repo", 1, Date.new(2026, 9, 3), "ALICE", [{"starts_at" => "2026-09-03T09:00:00+00:00", "ends_at" => "2026-09-03T13:00:00+00:00"}])]),
         starts_on: start
       ).call
     end

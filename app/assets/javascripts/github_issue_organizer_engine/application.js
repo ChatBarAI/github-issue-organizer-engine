@@ -142,13 +142,16 @@
         .filter(item => item.developer_id === developerId)
         .sort((left, right) => left.starts_on.localeCompare(right.starts_on) || left.position - right.position);
       const laneEnds = [];
-      const placements = developerItems.map(item => {
-        const start = daysBetween(firstDate, item.starts_on);
-        const end = daysBetween(firstDate, item.ends_on);
-        let lane = laneEnds.findIndex(laneEnd => laneEnd < start);
-        if (lane === -1) lane = laneEnds.length;
-        laneEnds[lane] = end;
-        return { item, start, end, lane };
+      const placements = developerItems.flatMap(item => {
+        const segments = item.work_segments?.length ? item.work_segments : [{ starts_at: item.starts_on, ends_at: item.ends_on }];
+        return segments.map(segment => {
+          const start = daysBetween(firstDate, segment.starts_at.slice(0, 10));
+          const end = daysBetween(firstDate, segment.ends_at.slice(0, 10));
+          let lane = laneEnds.findIndex(laneEnd => laneEnd < start);
+          if (lane === -1) lane = laneEnds.length;
+          laneEnds[lane] = end;
+          return { item, start, end, lane };
+        });
       });
       const laneCount = Math.max(laneEnds.length, 1);
 
@@ -671,6 +674,17 @@
     const tracks = Array.from(root.querySelectorAll("[data-timeline-issue-drop-track]"));
     const tasks = Array.from(root.querySelectorAll("[data-timeline-item-move-url]"));
     const status = root.querySelector("[data-timeline-issue-move-status]");
+    const showMoveStatus = (kind, title, message) => {
+      if (!status) return;
+      status.hidden = false;
+      status.dataset.kind = kind;
+      status.querySelector("[data-move-status-title]").textContent = title;
+      status.querySelector("[data-move-status-message]").textContent = message;
+      status.querySelector("[data-move-status-icon]").textContent = kind === "error" ? "!" : "i";
+    };
+    status?.querySelector("[data-dismiss-move-status]")?.addEventListener("click", () => {
+      status.hidden = true;
+    });
     if (!tracks.length || !tasks.length) return;
 
     let draggedIssueId = null;
@@ -705,7 +719,7 @@
         ?.dataset.timelineIssue || null;
     };
 
-    const pastStartAt = (track, clientX) => {
+    const vacantStartAt = (track, clientX) => {
       const columns = Array.from(track.querySelectorAll(".tif-timeline-day-column"));
       const day = columns.findIndex(column => {
         const bounds = column.getBoundingClientRect();
@@ -715,7 +729,14 @@
       const date = parseDate(track.dataset.startDate);
       date.setDate(date.getDate() + day);
       const value = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
-      if (value >= track.dataset.timelineStartDate) return null;
+      if (value >= track.dataset.timelineStartDate) {
+        const occupied = Array.from(track.querySelectorAll("[data-timeline-item-move-url]")).some(task => {
+          if (task.dataset.timelineIssue === draggedIssueId) return false;
+          const bounds = task.getBoundingClientRect();
+          return clientX >= bounds.left && clientX < bounds.right;
+        });
+        if (occupied) return null;
+      }
       const bounds = columns[day].getBoundingClientRect();
       const hour = 9 + Math.min(7, Math.floor((clientX - bounds.left) / bounds.width * 8));
       return `${value}T${String(hour).padStart(2, "0")}:00:00+00:00`;
@@ -726,7 +747,7 @@
 
       const moveUrl = draggedMoveUrl;
       const csrfToken = document.querySelector("meta[name='csrf-token']")?.content;
-      if (status) status.textContent = `Moving issue to ${track.dataset.developerId}…`;
+      showMoveStatus("pending", "Updating schedule…", `Moving issue to ${track.dataset.developerId}.`);
       root.classList.add("is-moving-timeline-issue");
 
       try {
@@ -748,13 +769,19 @@
         const payload = await response.json();
         if (!response.ok) throw new Error(payload.error || "Could not move the issue.");
 
+        if (payload.changed === false) {
+          root.classList.remove("is-moving-timeline-issue");
+          showMoveStatus("info", "Schedule unchanged", payload.message);
+          return;
+        }
+
         const destination = new URL(payload.timeline_url || window.location.href, window.location.href);
         const extraPastDays = new URL(window.location.href).searchParams.get("extra_past_days");
         if (extraPastDays) destination.searchParams.set("extra_past_days", extraPastDays);
         window.location.assign(destination.href);
       } catch (error) {
         root.classList.remove("is-moving-timeline-issue");
-        if (status) status.textContent = error.message;
+        showMoveStatus("error", "Couldn’t move issue", error.message);
       }
     };
 
@@ -770,7 +797,8 @@
         draggedTasks().forEach(issueTask => issueTask.classList.add("is-dragging"));
         event.dataTransfer.effectAllowed = "move";
         event.dataTransfer.setData("text/plain", draggedIssueId);
-        if (status) status.textContent = "Choose a position in any developer's schedule.";
+        // Preserve the banner children: the drop handler updates them in place.
+        // Leave its layout unchanged while the pointer is positioning the issue.
       });
 
       task.addEventListener("dragend", clearDragState);
@@ -837,7 +865,7 @@
 
         event.preventDefault();
         const beforeItemId = beforeIssueAt(track, event.clientX);
-        moveIssue(track, beforeItemId, pastStartAt(track, event.clientX));
+        moveIssue(track, beforeItemId, vacantStartAt(track, event.clientX));
         clearDragState();
       });
     });

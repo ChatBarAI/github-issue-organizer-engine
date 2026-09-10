@@ -70,7 +70,7 @@ module GithubIssueOrganizerEngine
       assert_equal "Unknown timeline developer", error.message
     end
 
-    def test_dropping_an_issue_back_in_its_original_position_is_a_no_op
+    def test_dropping_in_the_same_queue_position_still_reschedules_to_close_gaps
       first = fake_item(1, "developer-a", 1)
       second = fake_item(2, "developer-a", 2)
       timeline = FakeTimeline.new(
@@ -78,7 +78,10 @@ module GithubIssueOrganizerEngine
         items: [ first, second ]
       )
 
-      TimelineRescheduler.stub(:new, ->(**) { flunk "a no-op move should not reschedule the timeline" }) do
+      called = false
+      rescheduler = Object.new
+      rescheduler.define_singleton_method(:call) { timeline }
+      TimelineRescheduler.stub(:new, ->(**arguments) { called = true; assert_equal [1, 2], arguments[:ordered_item_ids]; rescheduler }) do
         result = TimelineItemMover.new(
           timeline: timeline,
           item: first,
@@ -90,7 +93,8 @@ module GithubIssueOrganizerEngine
       end
 
       assert_equal "developer-a", first.developer_id
-      assert_equal false, first.manually_assigned
+      assert called
+      assert_equal true, first.manually_assigned
     end
 
     def test_moves_into_vacant_past_hours_without_rescheduling_other_issues
@@ -118,7 +122,7 @@ module GithubIssueOrganizerEngine
       moving.effort_hours = 8
       occupied = fake_item(2, "developer-a", 2)
       occupied.starts_on = Date.new(2026, 9, 7)
-      occupied.work_segments = [{"starts_at" => "2026-09-10T09:00:00+00:00", "ends_at" => "2026-09-10T17:00:00+00:00"}]
+      occupied.work_segments = [{"starts_at" => "2026-09-07T09:00:00+00:00", "ends_at" => "2026-09-07T17:00:00+00:00"}]
       period = Struct.new(:developer_id, :starts_at, :ends_at).new("developer-a",
         DateTime.iso8601("2026-09-07T13:00:00+00:00"), DateTime.iso8601("2026-09-07T14:00:00+00:00"))
       [[occupied], []].each do |other_items|
@@ -131,6 +135,35 @@ module GithubIssueOrganizerEngine
         end
         assert_equal original_date, moving.starts_on
       end
+    end
+
+    def test_returns_a_past_issue_to_its_future_gap_without_rescheduling_others
+      moving = fake_item(1, "developer-a", 1)
+      moving.effort_hours = 8
+      moving.starts_on = Date.new(2026, 9, 7)
+      moving.work_segments = [{"starts_at" => "2026-09-07T09:00:00+00:00", "ends_at" => "2026-09-07T17:00:00+00:00"}]
+      other = fake_item(2, "developer-a", 2)
+      other.starts_on = other.ends_on = Date.new(2026, 9, 15)
+      other.work_segments = [{"starts_at" => "2026-09-15T09:00:00+00:00", "ends_at" => "2026-09-15T17:00:00+00:00"}]
+      timeline = FakeTimeline.new(developer_ids: ["developer-a"], items: [moving, other],
+        starts_on: Date.new(2026, 9, 11), unavailabilities: [])
+      original_other = other.to_h.deep_dup
+      TimelineRescheduler.stub(:new, ->(**) { flunk "placing into a gap must not shift other work" }) do
+        TimelineItemMover.new(timeline: timeline, item: moving, developer_id: "developer-a",
+          starts_at: "2026-09-14T09:00:00+00:00").call
+      end
+      assert_equal Date.new(2026, 9, 14), moving.starts_on
+      assert_equal Date.new(2026, 9, 14), moving.ends_on
+      assert_equal 1, moving.work_segments.length
+      assert_equal original_other, other.to_h
+
+      original_moving = moving.to_h.deep_dup
+      assert_raises(ArgumentError) do
+        TimelineItemMover.new(timeline: timeline, item: moving, developer_id: "developer-a",
+          starts_at: "2026-09-15T09:00:00+00:00").call
+      end
+      assert_equal original_moving, moving.to_h
+      assert_equal original_other, other.to_h
     end
 
     private

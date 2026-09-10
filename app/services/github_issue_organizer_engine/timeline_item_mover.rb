@@ -11,13 +11,12 @@ module GithubIssueOrganizerEngine
     def call
       raise ArgumentError, "Unknown timeline developer" unless @timeline.developer_ids.include?(@developer_id)
 
-      return move_into_past if @starts_at
+      return move_to_slot if @starts_at
 
       @timeline.transaction do
         queues = @timeline.developer_ids.to_h do |developer_id|
           [ developer_id, scheduled_items.select { |item| item.developer_id == developer_id } ]
         end
-        original_ordered_item_ids = ordered_item_ids(queues)
         queues.each_value { |items| items.delete(@item) }
 
         destination = queues.fetch(@developer_id)
@@ -31,8 +30,6 @@ module GithubIssueOrganizerEngine
         end
 
         destination.insert(insertion_index, @item)
-        return @timeline if @item.developer_id == @developer_id &&
-          ordered_item_ids(queues) == original_ordered_item_ids
 
         @item.update!(developer_id: @developer_id, manually_assigned: true)
 
@@ -48,11 +45,11 @@ module GithubIssueOrganizerEngine
 
     private
 
-    def move_into_past
+    def move_to_slot
       start = DateTime.iso8601(@starts_at)
-      unless start.to_date < @timeline.starts_on && (9...17).cover?(start.hour) &&
+      unless (9...17).cover?(start.hour) &&
           start.min.zero? && start.sec.zero? && !start.saturday? && !start.sunday?
-        raise ArgumentError, "Choose a weekday work slot before the timeline start"
+        raise ArgumentError, "Choose a weekday work slot between 09:00 and 17:00"
       end
 
       segments = []
@@ -71,9 +68,9 @@ module GithubIssueOrganizerEngine
       @timeline.transaction do
         occupied = @timeline.items.reject { |item| item == @item || item.developer_id != @developer_id }.flat_map do |item|
           periods = Array(item.work_segments).map { |segment| [DateTime.iso8601(segment.fetch("starts_at")), DateTime.iso8601(segment.fetch("ends_at"))] }
-          if periods.empty? || item.starts_on < periods.first.first.to_date
+          if periods.empty?
             periods << [item.starts_on.to_datetime + Rational(9, 24),
-              periods.empty? ? item.ends_on.to_datetime + Rational(17, 24) : periods.first.first]
+              item.ends_on.to_datetime + Rational(17, 24)]
           end
           periods
         end

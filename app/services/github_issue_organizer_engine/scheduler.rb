@@ -85,6 +85,9 @@ module GithubIssueOrganizerEngine
       scheduled = schedulable.each_with_index.map do |issue, index|
         labels = scheduling_labels_for(issue)
         hours = EFFORT_HOURS.fetch(labels[:effort])
+        history = historical_segments(issue)
+        historical_hours = history.sum { |segment| (DateTime.iso8601(segment.fetch("ends_at")) - DateTime.iso8601(segment.fetch("starts_at"))) * 24 }
+        remaining_hours = [hours - historical_hours, 0].max
         preferred_developer_id = preferred_developer_id_for(issue)
         carried_developer_id = @developer_ids.find do |id|
           developer_match?(id, issue["carried_developer_id"])
@@ -99,18 +102,18 @@ module GithubIssueOrganizerEngine
         raise ArgumentError, "Assigned developer is not part of this timeline" if eligible_developers.empty?
 
         candidate_schedules = eligible_developers.map do |candidate|
-          segments = work_segments(candidate[:cursor], candidate[:id], hours)
+          segments = work_segments(candidate[:cursor], candidate[:id], remaining_hours)
           [ candidate, segments ]
         end
         developer, segments = candidate_schedules.min_by do |candidate, candidate_segments|
           [
-            DateTime.iso8601(candidate_segments.last.fetch("ends_at")),
+            candidate_segments.empty? ? candidate[:cursor] : DateTime.iso8601(candidate_segments.last.fetch("ends_at")),
             developer_match?(candidate[:id], preferred_developer_id) ? 0 : 1,
             candidate[:position]
           ]
         end
-        cursor = DateTime.iso8601(segments.last.fetch("ends_at"))
-        developer[:cursor] = cursor
+        developer[:cursor] = DateTime.iso8601(segments.last.fetch("ends_at")) unless segments.empty?
+        segments = history + segments
         starts_on = DateTime.iso8601(segments.first.fetch("starts_at")).to_date
         ends_on = DateTime.iso8601(segments.last.fetch("ends_at")).to_date
 
@@ -123,7 +126,7 @@ module GithubIssueOrganizerEngine
           "github_assignee_login" => first_github_assignee(issue)&.fetch("login", nil),
           "github_assignee_matches" => developer_match?(developer[:id], preferred_developer_id),
           "manually_assigned" => issue["manually_assigned"] == true,
-          "starts_on" => issue["carried_starts_on"] || starts_on.iso8601,
+          "starts_on" => starts_on.iso8601,
           "ends_on" => ends_on.iso8601,
           "work_segments" => segments,
           "developer_id" => developer[:id],
@@ -181,6 +184,18 @@ module GithubIssueOrganizerEngine
     end
 
     private
+
+    # Only recorded work before the new timeline boundary consumes past effort.
+    def historical_segments(issue)
+      boundary = @starts_on.to_datetime
+      Array(issue["carried_work_segments"]).filter_map do |segment|
+        from = DateTime.iso8601(segment.fetch("starts_at"))
+        to = [DateTime.iso8601(segment.fetch("ends_at")), boundary].min
+        next unless from < to
+
+        { "starts_at" => from.iso8601, "ends_at" => to.iso8601 }
+      end.sort_by { |segment| DateTime.iso8601(segment.fetch("starts_at")) }
+    end
 
     def parse_start_date(value)
       Date.parse(value.to_s)

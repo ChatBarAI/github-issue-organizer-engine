@@ -1909,3 +1909,100 @@
   color: var(--tif-danger);
   border-color: var(--tif-danger);
 }
+
+.github-issue-organizer-engine .tif-drag-help {
+  margin: 0 0 12px;
+  color: var(--tif-muted);
+  font-size: 12px;
+}
+
+.tif-drag-help summary {
+  cursor: pointer;
+  width: fit-content;
+}
+
+.github-issue-organizer-engine .tif-drag-help p {
+  margin: 6px 0 0;
+  max-width: 70ch;
+  font-size: inherit;
+}
+
+.github-issue-organizer-engine .tif-move-feedback {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--tif-border);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--tif-accent) 5%, var(--tif-panel));
+  color: var(--tif-text);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.github-issue-organizer-engine .tif-move-feedback[hidden] {
+  display: none;
+}
+
+.tif-move-feedback-icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 18px;
+  height: 18px;
+  margin-top: 1px;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  color: var(--tif-accent);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.tif-move-feedback-copy {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.tif-move-feedback-copy strong,
+.tif-move-feedback-copy span {
+  display: block;
+}
+
+.tif-move-feedback-copy span {
+  color: var(--tif-muted);
+  margin-top: 2px;
+}
+
+.github-issue-organizer-engine .tif-move-feedback-dismiss {
+  flex: 0 0 28px;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--tif-muted);
+  font: inherit;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.tif-move-feedback-dismiss:hover {
+  background: color-mix(in srgb, var(--tif-muted) 12%, transparent);
+}
+
+.tif-move-feedback-dismiss:focus-visible,
+.tif-drag-help summary:focus-visible {
+  outline: 2px solid var(--tif-accent);
+  outline-offset: 2px;
+}
+
+.github-issue-organizer-engine .tif-move-feedback[data-kind="error"] {
+  border-color: color-mix(in srgb, var(--tif-danger) 45%, var(--tif-border));
+  background: color-mix(in srgb, var(--tif-danger) 6%, var(--tif-panel));
+}
+
+.tif-move-feedback[data-kind="error"] .tif-move-feedback-icon {
+  color: var(--tif-danger);
+}

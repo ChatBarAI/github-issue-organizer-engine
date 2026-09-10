@@ -1,5 +1,12 @@
 <% chart_items = timeline.items.to_a %>
 <% if chart_items.any? %>
+  <% missing_history = chart_items.select do |item|
+    item.starts_on < timeline.starts_on &&
+      (item.work_segments.blank? || DateTime.iso8601(item.work_segments.first.fetch("starts_at")).to_date > item.starts_on)
+  end %>
+  <% if missing_history.any? %>
+    <p role="status">Historical work is missing for <%= missing_history.map { |item| "#{item.repository} ##{item.issue_number}" }.join(", ") %>. Restore recorded work before rescheduling; earlier start dates alone do not establish hours worked.</p>
+  <% end %>
   <% first_date = timeline_chart_first_date(timeline.starts_on, chart_items,
     past_days: local_assigns[:editable_issues] ? local_assigns[:extra_past_days] : 0) %>
   <% last_date = chart_items.map(&:ends_on).max %>
@@ -73,14 +80,6 @@
             else
               merged << segment.dup
             end
-          end
-          if item.starts_on < timeline.starts_on && Time.zone.parse(segments.first.fetch("starts_at")).to_date >= timeline.starts_on
-            visual_segments.unshift({
-              "starts_at" => "#{item.starts_on.iso8601}T09:00:00",
-              "ends_at" => "#{(timeline.starts_on - 1).iso8601}T17:00:00",
-              "historical" => true,
-              "synthetic" => true
-            })
           end
           visual_segments.map { |segment| [ item, segment ] }
         end %>

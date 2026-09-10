@@ -2,7 +2,7 @@ module GithubIssueOrganizerEngine
   class TimelineRescheduler
     def initialize(timeline:, starts_on: timeline.starts_on, allow_reassignment: true, ordered_item_ids: nil)
       @timeline = timeline
-      @starts_on = starts_on
+      @starts_on = Date.parse(starts_on.to_s)
       @allow_reassignment = allow_reassignment
       @ordered_item_ids = ordered_item_ids
     end
@@ -71,8 +71,9 @@ module GithubIssueOrganizerEngine
             }.compact
           ].reject(&:empty?)
         }
-        if item.starts_on < @timeline.starts_on
+        if item.starts_on < @starts_on
           issue["carried_starts_on"] = item.starts_on.iso8601
+          issue["carried_work_segments"] = Array(item.work_segments)
           issue["carried_developer_id"] = item.developer_id
         end
         issue["assigned_developer_id"] = item.developer_id unless @allow_reassignment

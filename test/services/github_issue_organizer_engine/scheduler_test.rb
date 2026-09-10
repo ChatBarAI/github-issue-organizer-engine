@@ -351,6 +351,62 @@ module GithubIssueOrganizerEngine
       assert_equal [4, 3, 2, 1], result.scheduled.map { |item| item["issue_number"] }
     end
 
+    def test_split_work_keeps_total_effort_across_repeated_rescheduling
+      history = (8..10).map { |day| segment("2026-09-#{day.to_s.rjust(2, '0')}", 9, 17) }
+      ongoing = issue(50, "Priority: High", "Effort: 5 days", "2026-01-01T00:00:00Z").merge(
+        "carried_work_segments" => history, "carried_starts_on" => "2026-09-08")
+      interruption = issue(48, "Priority: Critical", "Effort: 1 day", "2026-01-01T00:00:00Z")
+      # Both issues were carried over; priority puts #48 first.
+      interruption["carried_starts_on"] = "2026-09-07"
+      2.times do
+        result = Scheduler.new(issues: [interruption, ongoing], starts_on: "2026-09-11", developer_ids: ["alice"]).call
+        item = result.scheduled.find { |entry| entry["issue_number"] == 50 }
+        assert_equal "2026-09-08", item["starts_on"]
+        assert_equal "2026-09-15", item["ends_on"]
+        assert_equal 40, segment_hours(item["work_segments"])
+        assert_equal history, item["work_segments"].first(3)
+        ongoing["carried_work_segments"] = item["work_segments"]
+      end
+    end
+
+    def test_completed_or_reduced_estimates_preserve_history_without_using_future_capacity
+      ["Effort: 4 hrs", "Effort: 1 day"].each do |effort|
+        past = issue(1, "Priority: Critical", effort, "2026-01-01T00:00:00Z").merge(
+          "carried_work_segments" => [segment("2026-09-10", 9, 17)])
+        future = issue(2, "Priority: High", "Effort: 1 day", "2026-01-01T00:00:00Z")
+        result = Scheduler.new(issues: [past, future], starts_on: "2026-09-11", developer_ids: ["alice"]).call
+        assert_equal "2026-09-10", result.scheduled.first["ends_on"]
+        assert_equal 8, segment_hours(result.scheduled.first["work_segments"])
+        assert_equal "2026-09-11", result.scheduled.last["ends_on"]
+      end
+    end
+
+    def test_clips_history_at_boundary_and_preserves_partial_hours
+      past = issue(1, "Priority: High", "Effort: 4 hrs", "2026-01-01T00:00:00Z").merge(
+        "carried_work_segments" => [{"starts_at" => "2026-09-10T23:00:00+00:00", "ends_at" => "2026-09-11T01:00:00+00:00"}])
+      item = Scheduler.new(issues: [past], starts_on: "2026-09-11", developer_ids: ["alice"]).call.scheduled.first
+      assert_equal "2026-09-11T00:00:00+00:00", item["work_segments"].first["ends_at"]
+      assert_equal "2026-09-11T12:00:00+00:00", item["work_segments"].last["ends_at"]
+      assert_equal 4, segment_hours(item["work_segments"])
+    end
+
+    def test_history_gaps_weekends_and_future_unavailability_do_not_count_as_effort
+      ongoing = issue(1, "Priority: High", "Effort: 2 days", "2026-01-01T00:00:00Z").merge(
+        "carried_work_segments" => [segment("2026-09-04", 13, 17), segment("2026-09-07", 9, 11)])
+      item = Scheduler.new(issues: [ongoing], starts_on: "2026-09-11", developer_ids: ["alice"],
+        unavailability: [{developer_id: "alice", starts_at: "2026-09-11T12:00:00+00:00", ends_at: "2026-09-11T14:00:00+00:00"}]).call.scheduled.first
+      assert_equal 16, segment_hours(item["work_segments"])
+      assert_equal "2026-09-14T13:00:00+00:00", item["work_segments"].last["ends_at"]
+    end
+
+    def segment(date, from, to)
+      {"starts_at" => "#{date}T#{from.to_s.rjust(2, '0')}:00:00+00:00", "ends_at" => "#{date}T#{to}:00:00+00:00"}
+    end
+
+    def segment_hours(segments)
+      segments.sum { |part| (DateTime.iso8601(part["ends_at"]) - DateTime.iso8601(part["starts_at"])) * 24 }
+    end
+
     private
 
     def issue(number, priority, effort, created_at)

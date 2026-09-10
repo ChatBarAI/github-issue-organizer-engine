@@ -4,6 +4,7 @@ module GithubIssueOrganizerEngine
 
     def update
       item = @timeline.items.find(params[:id])
+      original_schedule = schedule_snapshot
       TimelineItemMover.new(
         timeline: @timeline,
         item: item,
@@ -12,8 +13,11 @@ module GithubIssueOrganizerEngine
         starts_at: item_params[:starts_at]
       ).call
 
+      @timeline.items.reload
+      changed = original_schedule != schedule_snapshot
       render json: {
-        message: "Issue moved.",
+        changed: changed,
+        message: changed ? "Issue moved." : "Already at the earliest available time in this position. Drop before or after another issue to reorder.",
         timeline_url: edit_timeline_path(@timeline)
       }
     rescue ActiveRecord::RecordInvalid, ActiveRecord::RecordNotFound, ArgumentError => error
@@ -34,6 +38,12 @@ module GithubIssueOrganizerEngine
     end
 
     private
+
+    def schedule_snapshot
+      @timeline.items.map do |entry|
+        entry.attributes.slice("id", "developer_id", "starts_on", "ends_on", "work_segments")
+      end.sort_by { |entry| entry.fetch("id") }
+    end
 
     def set_timeline
       @timeline = Timeline.includes(:items, :unavailabilities).find(params[:timeline_id])
