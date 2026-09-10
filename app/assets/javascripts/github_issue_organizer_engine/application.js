@@ -403,12 +403,11 @@
 
     const help = document.createElement("p");
     help.className = "tif-timeline-summary";
-    help.textContent = "There are more same-priority issues than available developers. Click every issue in the order it should be scheduled. Click a ranked issue to remove its position.";
+    help.textContent = "There are more same-priority issues than available developers. Rank any issues you want scheduled first within their group. Unranked issues follow automatically by creation date. Click a ranked issue to remove its position.";
     container.append(help);
 
     const groupKey = group => group.ranking_key || group.priority;
     const selections = new Map(payload.ranking_groups.map(group => [groupKey(group), []]));
-    const expectedCount = payload.ranking_groups.reduce((total, group) => total + group.issues.length, 0);
     const groupsContainer = document.createElement("div");
     groupsContainer.className = "tif-ranking-groups";
     container.append(groupsContainer);
@@ -425,7 +424,6 @@
     confirmButton.type = "button";
     confirmButton.className = "tif-primary";
     confirmButton.textContent = "Generate with this order";
-    confirmButton.disabled = true;
     confirmButton.addEventListener("click", () => {
       const issueOrder = payload.ranking_groups.flatMap(group => selections.get(groupKey(group)));
       submitRanking("manual", issueOrder);
@@ -486,8 +484,6 @@
         groupsContainer.append(section);
       });
 
-      const selectedCount = Array.from(selections.values()).reduce((total, ids) => total + ids.length, 0);
-      confirmButton.disabled = selectedCount !== expectedCount;
     };
 
     renderGroups();
@@ -663,6 +659,15 @@
     if (root.dataset.timelineIssueEditorInitialized === "true") return;
     root.dataset.timelineIssueEditorInitialized = "true";
 
+    const pastDaysDialog = root.querySelector("#tif-past-days-dialog");
+    root.querySelector("[data-open-past-days]")?.addEventListener("click", () => {
+      pastDaysDialog.showModal();
+      pastDaysDialog.querySelector("input[type=number]").focus();
+    });
+    root.querySelectorAll("[data-close-past-days]").forEach(button => {
+      button.addEventListener("click", () => pastDaysDialog.close());
+    });
+
     const tracks = Array.from(root.querySelectorAll("[data-timeline-issue-drop-track]"));
     const tasks = Array.from(root.querySelectorAll("[data-timeline-item-move-url]"));
     const status = root.querySelector("[data-timeline-issue-move-status]");
@@ -743,7 +748,10 @@
         const payload = await response.json();
         if (!response.ok) throw new Error(payload.error || "Could not move the issue.");
 
-        window.location.assign(payload.timeline_url || window.location.href);
+        const destination = new URL(payload.timeline_url || window.location.href, window.location.href);
+        const extraPastDays = new URL(window.location.href).searchParams.get("extra_past_days");
+        if (extraPastDays) destination.searchParams.set("extra_past_days", extraPastDays);
+        window.location.assign(destination.href);
       } catch (error) {
         root.classList.remove("is-moving-timeline-issue");
         if (status) status.textContent = error.message;
@@ -768,6 +776,7 @@
       task.addEventListener("dragend", clearDragState);
 
       task.addEventListener("keydown", event => {
+        if (event.target.closest("button, input, form")) return;
         if (!event.altKey || !event.shiftKey || ![ "ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown" ].includes(event.key)) return;
 
         const sourceTrack = task.closest("[data-timeline-issue-drop-track]");
@@ -1088,6 +1097,7 @@
   document.addEventListener("DOMContentLoaded", initializeAll);
   document.addEventListener("turbo:load", initializeAll);
   document.addEventListener("turbo:before-cache", () => {
+    document.querySelector("#tif-past-days-dialog[open]")?.close();
     document.querySelectorAll("[data-issue-history]").forEach(root => {
       delete root.dataset.historyInitialized;
       root.querySelectorAll("[data-history-highlight]").forEach(button => button.setAttribute("aria-pressed", "false"));

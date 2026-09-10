@@ -1,0 +1,22 @@
+<div class="tif-unavailability-list">
+  <% periods.each do |period| %>
+    <article class="tif-unavailability-row">
+      <h3><%= period.developer_id %></h3>
+      <p class="tif-unavailability-dates">
+        <% starts_at = period.starts_at.in_time_zone %>
+        <% ends_at = period.ends_at.in_time_zone %>
+        <time datetime="<%= starts_at.iso8601 %>" title="<%= l starts_at, format: :long %>"><%= l starts_at, format: "%b %-d, %Y · %H:%M" %></time>
+        – <time datetime="<%= ends_at.iso8601 %>" title="<%= l ends_at, format: :long %>"><%= l ends_at, format: starts_at.to_date == ends_at.to_date ? "%H:%M" : "%b %-d, %Y · %H:%M" %></time>
+      </p>
+      <p class="tif-unavailability-duration"><%= number_with_precision((period.ends_at - period.starts_at) / 1.hour, precision: 1, strip_insignificant_zeros: true) %> hours</p>
+      <p class="tif-unavailability-reason"><%= period.reason %></p>
+      <%= button_to "×",
+        timeline_unavailability_path(timeline, period),
+        method: :delete,
+        class: "tif-icon-danger-button",
+        title: "Delete unavailable period",
+        aria: { label: "Delete unavailable period for #{period.developer_id}" },
+        form: { data: { turbo_confirm: "Delete this unavailable period and reschedule?" } } %>
+    </article>
+  <% end %>
+</div>

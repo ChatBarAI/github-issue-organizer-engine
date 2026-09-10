@@ -18,6 +18,7 @@ module GithubIssueOrganizerEngine
     end
 
     def edit
+      @extra_past_days = params[:extra_past_days].to_i.clamp(0, 365)
       @unavailability = TimelineUnavailability.new
       @unavailability.unavailable_on = Date.current
       @unavailability.unavailable_at_time = "09:00"

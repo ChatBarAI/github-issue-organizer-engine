@@ -143,9 +143,9 @@ module GithubIssueOrganizerEngine
       expected_ids = ranking_groups.flat_map { |group| group.fetch("issues") }
         .map { |issue| issue.fetch("id") }
       submitted_ids = ordered_issue_ids
-      return if submitted_ids == submitted_ids.uniq && submitted_ids.sort == expected_ids.sort
+      return if submitted_ids == submitted_ids.uniq && (submitted_ids - expected_ids).empty?
 
-      raise ArgumentError, "Choose a schedule position for every tied issue"
+      raise ArgumentError, "Choose each ranked issue only once from the available tied issues"
     end
 
     def linked_github_login

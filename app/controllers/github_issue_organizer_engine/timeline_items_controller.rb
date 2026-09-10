@@ -20,6 +20,19 @@ module GithubIssueOrganizerEngine
       render json: { error: error.message }, status: :unprocessable_entity
     end
 
+    def destroy
+      item = @timeline.items.find(params[:id])
+      unless item.starts_on < @timeline.starts_on
+        raise ArgumentError, "Only issues with past work can be removed here"
+      end
+
+      item.destroy!
+      redirect_to edit_timeline_path(@timeline, extra_past_days: params[:extra_past_days].to_i.clamp(0, 365)),
+        notice: "Issue removed from this timeline."
+    rescue ActiveRecord::RecordNotFound, ActiveRecord::RecordNotDestroyed, ArgumentError => error
+      redirect_to edit_timeline_path(@timeline), alert: error.message
+    end
+
     private
 
     def set_timeline

@@ -52,31 +52,15 @@
         Add
       </button>
     </div>
-    <% persisted_unavailabilities = @timeline.unavailabilities.select(&:persisted?) %>
-    <% if persisted_unavailabilities.any? %>
-      <div class="tif-saved-list">
-        <% persisted_unavailabilities.each do |period| %>
-          <article class="tif-saved-item">
-            <div>
-              <h3><%= period.developer_id %></h3>
-              <p>
-                <%= l period.starts_at, format: :long %> – <%= l period.ends_at, format: :long %> ·
-                <%= number_with_precision((period.ends_at - period.starts_at) / 1.hour, precision: 1, strip_insignificant_zeros: true) %> hours
-              </p>
-              <% if period.reason.present? %>
-                <p class="tif-unavailability-reason"><%= period.reason %></p>
-              <% end %>
-            </div>
-            <%= button_to "×",
-              timeline_unavailability_path(@timeline, period),
-              method: :delete,
-              class: "tif-icon-danger-button",
-              title: "Delete unavailable period",
-              aria: { label: "Delete unavailable period for #{period.developer_id}" },
-              form: { data: { turbo_confirm: "Delete this unavailable period and reschedule?" } } %>
-          </article>
-        <% end %>
-      </div>
+    <% displayed_periods, outside_periods = @timeline.unavailabilities.select(&:persisted?).partition do |period|
+      unavailability_in_displayed_timeline?(period, @timeline, past_days: @extra_past_days)
+    end %>
+    <%= render "unavailability_list", timeline: @timeline, periods: displayed_periods if displayed_periods.any? %>
+    <% if outside_periods.any? %>
+      <details class="tif-outside-unavailability">
+        <summary>Outside displayed dates (<%= outside_periods.size %>)</summary>
+        <%= render "unavailability_list", timeline: @timeline, periods: outside_periods %>
+      </details>
     <% end %>
     <p class="tif-unavailability-selection-prompt"
       data-unavailability-selection-prompt
@@ -96,10 +80,29 @@
       timeline: @timeline,
       editable_unavailability: true,
       editable_issues: true,
+      extra_past_days: @extra_past_days,
       show_view_options: false,
       chart_id: "tif-updated-schedule-chart" %>
     <%= render "informational_issues", timeline: @timeline %>
   </section>
+
+  <dialog id="tif-past-days-dialog" aria-labelledby="tif-past-days-title">
+    <div class="tif-dialog-header">
+      <h2 id="tif-past-days-title">Show past days</h2>
+      <button type="button" class="tif-dialog-close" data-close-past-days
+        aria-label="Close dialog">×</button>
+    </div>
+    <%= form_with url: edit_timeline_path(@timeline), method: :get do |form| %>
+      <div class="tif-field">
+        <%= form.label :extra_past_days, "Days before Timeline start" %>
+        <%= form.number_field :extra_past_days, value: @extra_past_days, min: 0, max: 365, step: 1, required: true %>
+      </div>
+      <div class="tif-dialog-actions">
+        <button type="button" class="tif-account-link" data-close-past-days>Cancel</button>
+        <%= form.submit "Update display", class: "tif-primary" %>
+      </div>
+    <% end %>
+  </dialog>
 
   <%= render "add_unavailability_dialog", timeline: @timeline, unavailability: @unavailability %>
   <%= render "unavailability_dialog", timeline: @timeline %>

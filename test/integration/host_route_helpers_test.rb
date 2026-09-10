@@ -5,6 +5,59 @@ require "rails/test_help"
 require "minitest/mock"
 
 class HostRouteHelpersTest < ActionDispatch::IntegrationTest
+  test "manual ranking accepts subsets and empty orders but rejects duplicates and unknown issues" do
+    controller = GithubIssueOrganizerEngine::IssuesController.new
+    groups = [{"issues" => [{"id" => "10"}, {"id" => "20"}, {"id" => "30"}]}]
+    [["20"], [], ["30", "10", "20"]].each do |order|
+      controller.params = ActionController::Parameters.new(tie_breaker: "manual", issue_order: order)
+      assert_nil controller.send(:validate_manual_order!, groups)
+    end
+    [["20", "20"], ["99"]].each do |order|
+      controller.params = ActionController::Parameters.new(tie_breaker: "manual", issue_order: order)
+      assert_raises(ArgumentError) { controller.send(:validate_manual_order!, groups) }
+    end
+  end
+
+  test "past issues can be removed from their timeline without rescheduling" do
+    removed = false
+    item = Object.new
+    item.define_singleton_method(:starts_on) { Date.new(2026, 9, 7) }
+    item.define_singleton_method(:destroy!) { removed = true }
+    items = Object.new
+    items.define_singleton_method(:find) { |id| raise ActiveRecord::RecordNotFound unless id == "12"; item }
+    timeline = Object.new
+    timeline.define_singleton_method(:items) { items }
+    timeline.define_singleton_method(:starts_on) { Date.new(2026, 9, 11) }
+    timeline.define_singleton_method(:to_param) { "39" }
+    scope = Object.new
+    scope.define_singleton_method(:find) { |_id| timeline }
+    GithubIssueOrganizerEngine::Timeline.stub(:includes, scope) do
+      delete "/admin/github-issues/timelines/39/items/12", params: { extra_past_days: 8 }
+    end
+    assert removed
+    assert_redirected_to "/admin/github-issues/timelines/39/edit?extra_past_days=8"
+    assert_equal "Issue removed from this timeline.", flash[:notice]
+  end
+
+  test "remove endpoint rejects an issue without past work" do
+    item = Object.new
+    item.define_singleton_method(:starts_on) { Date.new(2026, 9, 11) }
+    item.define_singleton_method(:destroy!) { raise "must not remove future work" }
+    items = Object.new
+    items.define_singleton_method(:find) { |_id| item }
+    timeline = Object.new
+    timeline.define_singleton_method(:items) { items }
+    timeline.define_singleton_method(:starts_on) { Date.new(2026, 9, 11) }
+    timeline.define_singleton_method(:to_param) { "39" }
+    scope = Object.new
+    scope.define_singleton_method(:find) { |_id| timeline }
+    GithubIssueOrganizerEngine::Timeline.stub(:includes, scope) do
+      delete "/admin/github-issues/timelines/39/items/12"
+    end
+    assert_redirected_to "/admin/github-issues/timelines/39/edit"
+    assert_equal "Only issues with past work can be removed here", flash[:alert]
+  end
+
   setup do
     @original_repositories = GithubIssueOrganizerEngine.configuration.repositories
     GithubIssueOrganizerEngine.configuration.repositories = [ "example/one", "example/two" ]

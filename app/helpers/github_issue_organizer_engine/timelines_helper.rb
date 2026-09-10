@@ -1,5 +1,19 @@
 module GithubIssueOrganizerEngine
   module TimelinesHelper
+    def timeline_chart_first_date(starts_on, items, past_days: 0)
+      [starts_on - past_days.to_i.clamp(0, 365), items.map(&:starts_on).min].compact.min
+    end
+
+    def unavailability_in_displayed_timeline?(period, timeline, past_days: 0)
+      items = timeline.items.to_a
+      return false if items.empty?
+
+      first_date = timeline_chart_first_date(timeline.starts_on, items, past_days: past_days)
+      last_date = items.map(&:ends_on).max
+      period.starts_at.in_time_zone.to_date <= last_date &&
+        period.ends_at.in_time_zone > first_date.in_time_zone
+    end
+
     def issue_history_series(snapshots)
       maximum = [ snapshots.map(&:total).max.to_i, 1 ].max
       first_time = snapshots.first.captured_at.to_f

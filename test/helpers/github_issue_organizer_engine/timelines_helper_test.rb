@@ -6,6 +6,34 @@ module GithubIssueOrganizerEngine
   class TimelinesHelperTest < Minitest::Test
     include TimelinesHelper
 
+    def test_past_display_range_stays_fixed_after_moving_an_issue_into_it
+      start = Date.new(2026, 9, 10)
+      item = Struct.new(:starts_on).new(start)
+      assert_equal Date.new(2026, 9, 3), timeline_chart_first_date(start, [item], past_days: 7)
+      item.starts_on = Date.new(2026, 9, 4)
+      assert_equal Date.new(2026, 9, 3), timeline_chart_first_date(start, [item], past_days: 7)
+      assert_equal item.starts_on, timeline_chart_first_date(start, [item])
+      item.starts_on = Date.new(2026, 9, 1)
+      assert_equal item.starts_on, timeline_chart_first_date(start, [item], past_days: 7)
+    end
+
+    def test_unavailability_visibility_uses_the_displayed_date_range
+      item = Struct.new(:starts_on, :ends_on).new(Date.new(2026, 9, 10), Date.new(2026, 9, 15))
+      timeline = Struct.new(:starts_on, :items).new(item.starts_on, [item])
+      period_class = Struct.new(:starts_at, :ends_at)
+      Time.use_zone("UTC") do
+        earlier = period_class.new(Time.zone.parse("2026-09-08 09:00"), Time.zone.parse("2026-09-08 17:00"))
+        refute unavailability_in_displayed_timeline?(earlier, timeline)
+        assert unavailability_in_displayed_timeline?(earlier, timeline, past_days: 3)
+        spanning = period_class.new(Time.zone.parse("2026-09-09 09:00"), Time.zone.parse("2026-09-16 17:00"))
+        assert unavailability_in_displayed_timeline?(spanning, timeline)
+        boundary = period_class.new(Time.zone.parse("2026-09-09 09:00"), Time.zone.parse("2026-09-10 00:00"))
+        refute unavailability_in_displayed_timeline?(boundary, timeline)
+        later = period_class.new(Time.zone.parse("2026-09-16 00:00"), Time.zone.parse("2026-09-16 17:00"))
+        refute unavailability_in_displayed_timeline?(later, timeline)
+      end
+    end
+
     Snapshot = Struct.new(:captured_at, :priority_counts) do
       def total
         priority_counts.values.sum

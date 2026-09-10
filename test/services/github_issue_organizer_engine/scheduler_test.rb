@@ -339,6 +339,18 @@ module GithubIssueOrganizerEngine
       assert_equal 1, result.scheduled.size
     end
 
+    def test_partial_order_places_ranked_issues_first_and_others_by_creation_date
+      issues = [
+        issue(1, "Priority: High", "Effort: 1 day", "2026-01-02T00:00:00Z"),
+        issue(2, "Priority: High", "Effort: 1 day", "2026-01-01T00:00:00Z"),
+        issue(3, "Priority: High", "Effort: 1 day", "2026-01-03T00:00:00Z"),
+        issue(4, "Priority: Critical", "Effort: 1 day", "2026-01-04T00:00:00Z")
+      ]
+      result = Scheduler.new(issues: issues, starts_on: "2026-09-10",
+        developer_ids: ["alice"], ordered_issue_ids: [30]).call
+      assert_equal [4, 3, 2, 1], result.scheduled.map { |item| item["issue_number"] }
+    end
+
     private
 
     def issue(number, priority, effort, created_at)

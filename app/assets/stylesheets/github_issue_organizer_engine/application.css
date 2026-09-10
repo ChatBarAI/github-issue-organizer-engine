@@ -362,6 +362,7 @@
   text-align: center;
 }
 
+#tif-past-days-dialog,
 #tif-timeline-dialog,
 #tif-add-unavailability-dialog,
 #tif-unavailability-dialog {
@@ -376,12 +377,14 @@
   color: var(--tif-text);
 }
 
+#tif-past-days-dialog::backdrop,
 #tif-timeline-dialog::backdrop,
 #tif-add-unavailability-dialog::backdrop,
 #tif-unavailability-dialog::backdrop {
   background: rgba(0, 0, 0, 0.58);
 }
 
+#tif-past-days-dialog h2,
 #tif-timeline-dialog h2,
 #tif-add-unavailability-dialog h2,
 #tif-unavailability-dialog h2 {
@@ -1751,4 +1754,158 @@
 
 .github-issue-organizer-engine .tif-issue-history-table {
   margin-top: 16px;
+}
+
+#tif-past-days-dialog {
+  width: min(90vw, 380px);
+}
+
+.tif-timeline-corner.tif-has-past-days-control {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.github-issue-organizer-engine .tif-past-days-button {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translate(50%, -50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 28px;
+  height: 24px;
+  min-height: 0;
+  padding: 2px 4px;
+  border: 1px solid var(--tif-border);
+  border-radius: 5px;
+  color: var(--tif-muted);
+  background: var(--tif-panel);
+  cursor: pointer;
+}
+
+.github-issue-organizer-engine .tif-past-days-button:hover,
+.github-issue-organizer-engine .tif-past-days-button:focus-visible {
+  color: var(--tif-accent);
+  border-color: var(--tif-accent);
+}
+
+.tif-unavailability-list {
+  border-top: 1px solid var(--tif-border);
+}
+
+.tif-unavailability-row {
+  display: grid;
+  grid-template-columns: minmax(110px, 0.7fr) minmax(260px, 1.5fr) 70px minmax(120px, 1fr) 32px;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--tif-border);
+}
+
+.tif-unavailability-row h3,
+.tif-unavailability-row p {
+  min-width: 0;
+  margin: 0;
+  font-size: 0.84rem;
+  overflow-wrap: anywhere;
+}
+
+.tif-unavailability-row h3 {
+  font-weight: 600;
+}
+
+.tif-unavailability-dates,
+.tif-unavailability-duration {
+  color: var(--tif-muted);
+}
+
+.tif-unavailability-row .tif-unavailability-reason {
+  white-space: pre-wrap;
+}
+
+.tif-unavailability-row form {
+  margin: 0;
+}
+
+.tif-outside-unavailability {
+  margin-top: 16px;
+}
+
+.tif-outside-unavailability summary {
+  margin-bottom: 12px;
+  cursor: pointer;
+  color: var(--tif-muted);
+  font-size: 0.84rem;
+}
+
+@media (max-width: 900px) {
+  .tif-unavailability-row {
+    grid-template-columns: minmax(0, 1fr) auto 32px;
+    gap: 4px 12px;
+  }
+
+  .tif-unavailability-row h3 {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .tif-unavailability-duration {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .tif-unavailability-row form {
+    grid-column: 3;
+    grid-row: 1 / span 3;
+  }
+
+  .tif-unavailability-dates,
+  .tif-unavailability-row .tif-unavailability-reason {
+    grid-column: 1 / span 2;
+  }
+
+  .tif-unavailability-row .tif-unavailability-reason:empty {
+    display: none;
+  }
+}
+
+.tif-remove-past-issue-form {
+  position: absolute;
+  right: 3px;
+  bottom: 3px;
+  z-index: 6;
+  margin: 0;
+}
+
+.tif-timeline-task:has(.tif-remove-past-issue-form:is(:hover, :focus-within)) > .tif-timeline-task-preview {
+  opacity: 0;
+  visibility: hidden;
+  transition: none;
+}
+
+.tif-timeline-task:is(:hover, :focus, :focus-within):not(:has(.tif-remove-past-issue-form:is(:hover, :focus-within))) > .tif-remove-past-issue-form {
+  opacity: 0;
+}
+
+.github-issue-organizer-engine .tif-remove-past-issue {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  min-height: 0;
+  padding: 0;
+  border: 1px solid var(--tif-border);
+  border-radius: 6px;
+  background: var(--tif-panel);
+  color: var(--tif-muted);
+}
+
+.github-issue-organizer-engine .tif-remove-past-issue:hover {
+  color: var(--tif-danger);
+  border-color: var(--tif-danger);
 }
