@@ -58,6 +58,7 @@
           <%= form.label :result_type, "Show" %>
           <%= form.select :result_type, [
             [ "Issues", "issues" ],
+            [ "Issue consistency check", "consistency_check" ],
             [ "Pull requests awaiting my review", "review_requested" ],
             [ "All pull requests", "pull_requests" ]
           ] %>
@@ -170,6 +171,12 @@
         <input id="tif-starts-on" type="date" required>
       </div>
       <label class="tif-switch tif-save-option"
+             title="Preserve earlier start dates for matching in-progress issues from the current timeline. Future work still uses the full effort estimate.">
+        <input id="tif-carry-over-in-progress" type="checkbox" role="switch" checked>
+        <span class="tif-switch-control" aria-hidden="true"></span>
+        <span class="tif-switch-label">Carry over in-progress issues</span>
+      </label>
+      <label class="tif-switch tif-save-option"
              title="Use unavailable times from the previous timeline">
         <input id="tif-inherit-unavailability" type="checkbox" role="switch" checked>
         <span class="tif-switch-control" aria-hidden="true"></span>
@@ -177,7 +184,7 @@
       </label>
       <label class="tif-switch tif-save-option"
              title="Keep manual assignments for issues that are still open and schedulable">
-        <input id="tif-inherit-manual-assignments" type="checkbox" role="switch" checked>
+        <input id="tif-inherit-manual-assignments" type="checkbox" role="switch">
         <span class="tif-switch-control" aria-hidden="true"></span>
         <span class="tif-switch-label">Keep manual assignments</span>
       </label>

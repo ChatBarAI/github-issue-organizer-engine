@@ -71,6 +71,10 @@ module GithubIssueOrganizerEngine
             }.compact
           ].reject(&:empty?)
         }
+        if item.starts_on < @timeline.starts_on
+          issue["carried_starts_on"] = item.starts_on.iso8601
+          issue["carried_developer_id"] = item.developer_id
+        end
         issue["assigned_developer_id"] = item.developer_id unless @allow_reassignment
         issue
       end

@@ -12,10 +12,20 @@ module GithubIssueOrganizerEngine
     end
 
     def github_url
+      raise ArgumentError, "Consistency check results are available in the organizer" if params[:result_type] == "consistency_check"
+
       render json: { url: search_query.github_url }
     end
 
     def open_in_github
+      if params[:result_type] == "consistency_check"
+        result = github_client.search(search_query)
+        @conflicts = IssueConsistencyCheck.call(result.issues)
+        @incomplete_results = result.incomplete_results
+        render :consistency_check
+        return
+      end
+
       redirect_to search_query.github_url, allow_other_host: true
     rescue MissingGithubIdentityError => error
       redirect_to github_identity_path, alert: error.message
@@ -24,7 +34,7 @@ module GithubIssueOrganizerEngine
     def timeline
       starts_on = params.require(:starts_on)
       query = search_query
-      unless query.filters["result_type"] == "issues"
+      unless query.filters["result_type"] == "issues" && params[:result_type] != "consistency_check"
         raise ArgumentError, "Timelines can only be drafted from issues"
       end
       developer_ids = configured_developer_ids
@@ -36,7 +46,7 @@ module GithubIssueOrganizerEngine
       github_result = github_client.search(query)
       inherited_assignments = inherited_manual_assignments(github_result.issues, developer_ids)
       scheduler = Scheduler.new(
-        issues: inherited_assignments.issues,
+        issues: inherited_progress(inherited_assignments.issues, starts_on),
         starts_on: starts_on,
         developer_ids: developer_ids,
         unavailability: unavailability,
@@ -201,7 +211,7 @@ module GithubIssueOrganizerEngine
 
     def inherited_manual_assignments(issues, developer_ids)
       inherit_assignments = ActiveModel::Type::Boolean.new.cast(
-        params.fetch(:inherit_manual_assignments, "1")
+        params.fetch(:inherit_manual_assignments, "0")
       )
       return TimelineAssignmentInheritor::Result.new(issues: issues, count: 0) unless inherit_assignments
 
@@ -209,6 +219,16 @@ module GithubIssueOrganizerEngine
         issues: issues,
         timeline: previous_timeline,
         developer_ids: developer_ids
+      ).call
+    end
+
+    def inherited_progress(issues, starts_on)
+      return issues unless ActiveModel::Type::Boolean.new.cast(params.fetch(:carry_over_in_progress, "1"))
+
+      TimelineProgressInheritor.new(
+        issues: issues,
+        timeline: Timeline.current.includes(:items).first,
+        starts_on: starts_on
       ).call
     end
 

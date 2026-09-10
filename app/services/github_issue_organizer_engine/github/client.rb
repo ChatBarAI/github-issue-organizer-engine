@@ -87,6 +87,7 @@ module GithubIssueOrganizerEngine
           retrieved += items.length
           issues.concat(items.reject { |item| item.key?("pull_request") })
           incomplete_results ||= payload["incomplete_results"]
+          incomplete_results ||= payload.fetch("total_count", 0) > MAX_RESULTS_PER_REPOSITORY
           break if retrieved >= total || items.empty? || page >= 10
 
           page += 1

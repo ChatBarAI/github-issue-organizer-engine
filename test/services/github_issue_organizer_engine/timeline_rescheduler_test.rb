@@ -16,6 +16,7 @@ module GithubIssueOrganizerEngine
       :priority,
       :effort_hours,
       :position,
+      :starts_on,
       keyword_init: true
     ) do
       def update!(attributes)
@@ -66,6 +67,19 @@ module GithubIssueOrganizerEngine
       assert_equal "position = position + 2", items.update_statement
     end
 
+    def test_keeps_carried_start_dates_when_rescheduling
+      item = fake_item(id: 1, issue_number: 11, position: 1)
+      item.starts_on = Date.new(2026, 8, 24)
+      timeline = FakeTimeline.new(
+        starts_on: Date.new(2026, 8, 31), developer_ids: ["developer-a"],
+        items: FakeItems.new([item]), unavailabilities: []
+      )
+
+      TimelineRescheduler.new(timeline: timeline, starts_on: Date.new(2026, 9, 1)).call
+
+      assert_equal "2026-08-24", item.starts_on
+    end
+
     private
 
     def fake_item(id:, issue_number:, position:)
@@ -79,6 +93,7 @@ module GithubIssueOrganizerEngine
         developer_id: "developer-a",
         priority: "Priority: High",
         effort_hours: 4,
+        starts_on: Date.new(2026, 8, 31),
         position: position
       )
     end

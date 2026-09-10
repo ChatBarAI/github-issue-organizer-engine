@@ -11,6 +11,9 @@ module GithubIssueOrganizerEngine
       :position,
       :work_segments,
       :manually_assigned,
+      :effort_hours,
+      :ends_on,
+      :developer_position,
       keyword_init: true
     ) do
       def update!(attributes)
@@ -18,7 +21,7 @@ module GithubIssueOrganizerEngine
       end
     end
 
-    FakeTimeline = Struct.new(:developer_ids, :items, keyword_init: true) do
+    FakeTimeline = Struct.new(:developer_ids, :items, :starts_on, :unavailabilities, keyword_init: true) do
       def transaction
         yield
       end
@@ -88,6 +91,46 @@ module GithubIssueOrganizerEngine
 
       assert_equal "developer-a", first.developer_id
       assert_equal false, first.manually_assigned
+    end
+
+    def test_moves_into_vacant_past_hours_without_rescheduling_other_issues
+      moving = fake_item(1, "developer-a", 1)
+      moving.effort_hours = 8
+      other = fake_item(2, "developer-a", 2)
+      other.starts_on = Date.new(2026, 9, 10)
+      other.ends_on = other.starts_on
+      timeline = FakeTimeline.new(developer_ids: ["developer-a"], items: [moving, other],
+        starts_on: Date.new(2026, 9, 10), unavailabilities: [])
+
+      TimelineRescheduler.stub(:new, ->(**) { flunk "past moves must not reschedule other work" }) do
+        TimelineItemMover.new(timeline: timeline, item: moving, developer_id: "developer-a",
+          starts_at: "2026-09-04T13:00:00+00:00").call
+      end
+      assert_equal Date.new(2026, 9, 4), moving.starts_on
+      assert_equal Date.new(2026, 9, 7), moving.ends_on
+      assert_equal "2026-09-07T13:00:00+00:00", moving.work_segments.last.fetch("ends_at")
+      assert_equal Date.new(2026, 9, 10), other.starts_on
+      assert moving.manually_assigned
+    end
+
+    def test_rejects_overlap_including_carried_history_and_unavailability
+      moving = fake_item(1, "developer-a", 1)
+      moving.effort_hours = 8
+      occupied = fake_item(2, "developer-a", 2)
+      occupied.starts_on = Date.new(2026, 9, 7)
+      occupied.work_segments = [{"starts_at" => "2026-09-10T09:00:00+00:00", "ends_at" => "2026-09-10T17:00:00+00:00"}]
+      period = Struct.new(:developer_id, :starts_at, :ends_at).new("developer-a",
+        DateTime.iso8601("2026-09-07T13:00:00+00:00"), DateTime.iso8601("2026-09-07T14:00:00+00:00"))
+      [[occupied], []].each do |other_items|
+        timeline = FakeTimeline.new(developer_ids: ["developer-a"], items: [moving, *other_items],
+          starts_on: Date.new(2026, 9, 10), unavailabilities: other_items.empty? ? [period] : [])
+        original_date = moving.starts_on
+        assert_raises(ArgumentError) do
+          TimelineItemMover.new(timeline: timeline, item: moving, developer_id: "developer-a",
+            starts_at: "2026-09-07T09:00:00+00:00").call
+        end
+        assert_equal original_date, moving.starts_on
+      end
     end
 
     private

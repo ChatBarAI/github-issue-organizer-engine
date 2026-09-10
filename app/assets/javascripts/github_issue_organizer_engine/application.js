@@ -169,9 +169,16 @@
         dayColumn.style.gridColumn = `${index + 1}`;
         track.append(dayColumn);
       });
-      placements.forEach(({ item, start, end, lane }) => {
+      const visiblePlacements = placements.flatMap(placement => {
+        const boundary = daysBetween(firstDate, timelineStartsOn || firstDate);
+        if (placement.start >= boundary) return [placement];
+
+        const history = { ...placement, end: Math.min(placement.end, boundary - 1), historical: true };
+        return placement.end < boundary ? [history] : [history, { ...placement, start: boundary }];
+      });
+      visiblePlacements.forEach(({ item, start, end, lane, historical }) => {
         const task = document.createElement("article");
-        task.className = "tif-timeline-task";
+        task.className = `tif-timeline-task${historical ? " is-historical" : ""}`;
         task.style.gridColumn = `${start + 1} / ${end + 2}`;
         task.style.gridRow = `${lane + 1}`;
         task.title = `${formatDate(item.starts_on)} – ${formatDate(item.ends_on)}`;
@@ -183,6 +190,12 @@
         link.textContent = item.title;
         link.title = `${item.repository}#${item.issue_number} · ${item.title}`;
         task.append(link);
+        if (historical) {
+          const historyLabel = document.createElement("span");
+          historyLabel.className = "tif-timeline-history-label";
+          historyLabel.textContent = `Started earlier · before ${formatDate(timelineStartsOn)}`;
+          task.append(historyLabel);
+        }
 
         if (item.github_assignee_matches) {
           const marker = document.createElement("span");
@@ -492,6 +505,7 @@
     const closeTimelineButton = root.querySelector("#tif-close-timeline");
     const generateButton = root.querySelector("#tif-generate-timeline");
     const startsOnInput = root.querySelector("#tif-starts-on");
+    const carryOverInProgressInput = root.querySelector("#tif-carry-over-in-progress");
     const inheritUnavailabilityInput = root.querySelector("#tif-inherit-unavailability");
     const inheritManualAssignmentsInput = root.querySelector("#tif-inherit-manual-assignments");
     const results = root.querySelector("#tif-timeline-results");
@@ -502,6 +516,10 @@
 
     const updateTimelineAvailability = () => {
       const issuesSelected = resultTypeInput.value === "issues";
+      const consistencySelected = resultTypeInput.value === "consistency_check";
+      form.querySelector("input[type='submit']").value = consistencySelected ? "Run consistency check" : "Open in GitHub";
+      copyButton.disabled = consistencySelected;
+      copyButton.title = consistencySelected ? "Consistency check results are available in the organizer" : "";
       openTimelineButton.disabled = !issuesSelected;
       openTimelineButton.title = issuesSelected ? "" : "Timelines can only be drafted from issues";
     };
@@ -565,6 +583,7 @@
 
       const body = new FormData(form);
       body.set("starts_on", startsOnInput.value);
+      body.set("carry_over_in_progress", carryOverInProgressInput.checked ? "1" : "0");
       body.set("inherit_unavailability", inheritUnavailabilityInput.checked ? "1" : "0");
       body.set("inherit_manual_assignments", inheritManualAssignmentsInput.checked ? "1" : "0");
       if (tieBreaker) body.set("tie_breaker", tieBreaker);
@@ -681,7 +700,23 @@
         ?.dataset.timelineIssue || null;
     };
 
-    const moveIssue = async (track, beforeItemId) => {
+    const pastStartAt = (track, clientX) => {
+      const columns = Array.from(track.querySelectorAll(".tif-timeline-day-column"));
+      const day = columns.findIndex(column => {
+        const bounds = column.getBoundingClientRect();
+        return clientX >= bounds.left && clientX < bounds.right;
+      });
+      if (day < 0) return null;
+      const date = parseDate(track.dataset.startDate);
+      date.setDate(date.getDate() + day);
+      const value = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+      if (value >= track.dataset.timelineStartDate) return null;
+      const bounds = columns[day].getBoundingClientRect();
+      const hour = 9 + Math.min(7, Math.floor((clientX - bounds.left) / bounds.width * 8));
+      return `${value}T${String(hour).padStart(2, "0")}:00:00+00:00`;
+    };
+
+    const moveIssue = async (track, beforeItemId, startsAt = null) => {
       if (!draggedMoveUrl) return;
 
       const moveUrl = draggedMoveUrl;
@@ -700,7 +735,8 @@
           body: JSON.stringify({
             timeline_item: {
               developer_id: track.dataset.developerId,
-              before_item_id: beforeItemId
+              before_item_id: beforeItemId,
+              starts_at: startsAt
             }
           })
         });
@@ -792,7 +828,7 @@
 
         event.preventDefault();
         const beforeItemId = beforeIssueAt(track, event.clientX);
-        moveIssue(track, beforeItemId);
+        moveIssue(track, beforeItemId, pastStartAt(track, event.clientX));
         clearDragState();
       });
     });

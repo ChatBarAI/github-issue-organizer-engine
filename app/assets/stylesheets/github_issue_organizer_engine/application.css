@@ -807,6 +807,16 @@
   background: color-mix(in srgb, var(--tif-priority-color) 11%, var(--tif-panel));
 }
 
+.tif-timeline-task.is-historical {
+  border-color: #8c959f;
+  border-style: dashed;
+  background: color-mix(in srgb, #8c959f 24%, var(--tif-panel));
+}
+
+.tif-timeline-history-label {
+  font-style: italic;
+}
+
 .tif-timeline-task[draggable="true"] {
   cursor: grab;
 }
@@ -1345,6 +1355,16 @@
   width: 26px;
   height: 26px;
   font-size: 0.8rem;
+}
+
+.tif-timeline-issues .tif-issue-card {
+  display: flow-root;
+  padding: 10px;
+}
+
+.tif-timeline-issues .tif-issue-card-position {
+  float: right;
+  margin: 0 0 4px 8px;
 }
 
 .tif-issue-card-content h3,

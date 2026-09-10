@@ -1,0 +1,24 @@
+<% content_for :title, "Issue consistency check" %>
+<div class="github-issue-organizer-engine">
+  <header class="tif-heading">
+    <h1>Issue consistency check</h1>
+  </header>
+  <section class="tif-panel">
+    <p>Issues with two or more labels in the same Priority, Effort, or Status group, within your selected filters.</p>
+    <% if @incomplete_results %>
+      <p role="status">GitHub returned incomplete results. Some conflicting issues may be missing; narrow your filters and try again.</p>
+    <% end %>
+    <p><%= pluralize(@conflicts.size, "issue") %> with conflicting labels<%= " in the returned results" if @incomplete_results %>.</p>
+    <% @conflicts.each do |result| %>
+      <% issue = result.fetch("issue") %>
+      <article class="tif-issue-card">
+        <h2><%= link_to "#{issue['repository_url'].to_s.split('/repos/').last}##{issue['number']} — #{issue['title']}", issue.fetch("html_url"), target: "_blank", rel: "noopener noreferrer" %></h2>
+        <ul>
+          <% result.fetch("conflicts").each do |group, labels| %>
+            <li><strong><%= group %>:</strong> <%= labels.join(" · ") %></li>
+          <% end %>
+        </ul>
+      </article>
+    <% end %>
+  </section>
+</div>

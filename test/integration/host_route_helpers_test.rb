@@ -2,6 +2,7 @@ ENV["RAILS_ENV"] ||= "test"
 
 require_relative "../dummy/config/environment"
 require "rails/test_help"
+require "minitest/mock"
 
 class HostRouteHelpersTest < ActionDispatch::IntegrationTest
   setup do
@@ -27,10 +28,12 @@ class HostRouteHelpersTest < ActionDispatch::IntegrationTest
     assert_select "a[href='/admin/github-issues/settings']", text: "Settings"
     assert_select "input#tif-developer-count", count: 0
     assert_select "input#tif-save-timeline", count: 0
+    assert_select "label.tif-switch input#tif-carry-over-in-progress[type=checkbox][role=switch][checked]", count: 1
     assert_select "label.tif-switch input#tif-inherit-unavailability[type='checkbox'][role='switch'][checked]", count: 1
-    assert_select "label.tif-switch input#tif-inherit-manual-assignments[type='checkbox'][role='switch'][checked]", count: 1
+    assert_select "label.tif-switch input#tif-inherit-manual-assignments[type='checkbox'][role='switch']:not([checked])", count: 1
     assert_select "select[name='result_type']" do
       assert_select "option[value='issues']", text: "Issues", count: 1
+      assert_select "option[value='consistency_check']", text: "Issue consistency check", count: 1
       assert_select "option[value='review_requested']", text: "Pull requests awaiting my review", count: 1
       assert_select "option[value='pull_requests']", text: "All pull requests", count: 1
     end
@@ -69,6 +72,24 @@ class HostRouteHelpersTest < ActionDispatch::IntegrationTest
       assert_select priority_group, "input[name='labels[]'][data-priority-filter]", count: 4
       assert_includes priority_group.text, "No priority"
     end
+  end
+
+  test "consistency check renders conflicting labels and incomplete results warning" do
+    issue = { "number" => 12, "title" => "Conflicting issue", "html_url" => "https://github.com/example/one/issues/12",
+      "repository_url" => "https://api.github.com/repos/example/one", "labels" => ["Effort: Small", "Effort: Large"] }
+    client = Object.new
+    client.define_singleton_method(:search) do |query|
+      raise "Expected issue search" unless query.repository_query("example/one").include?("is:issue state:closed")
+      GithubIssueOrganizerEngine::Github::Client::Result.new(issues: [issue], incomplete_results: true)
+    end
+    GithubIssueOrganizerEngine::Github::Client.stub(:new, client) do
+      get "/admin/github-issues/issues/open_in_github", params: { result_type: "consistency_check", state: "closed" }
+    end
+    assert_response :success
+    assert_select "h1", text: "Issue consistency check"
+    assert_select "article a", text: "example/one#12 — Conflicting issue"
+    assert_select "article li", text: "Effort: Effort: Small · Effort: Large"
+    assert_select "p[role=status]", text: /incomplete results/
   end
 
   test "open in GitHub redirects to account linking when @me has no linked identity" do

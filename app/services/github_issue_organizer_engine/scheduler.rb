@@ -62,12 +62,14 @@ module GithubIssueOrganizerEngine
       active, in_review, blocked = classified_issues
       schedulable, needs_labels = active.partition { |issue| scheduling_labels_for(issue).values.all? }
       schedulable.sort_by! do |issue|
+        continuation_rank = issue["carried_starts_on"] ? 0 : 1
         if @strict_issue_order
-          next [ @issue_order.fetch(issue["id"].to_s, @issue_order.size), parse_time(issue["created_at"]) ]
+          next [ continuation_rank, @issue_order.fetch(issue["id"].to_s, @issue_order.size), parse_time(issue["created_at"]) ]
         end
 
         labels = scheduling_labels_for(issue)
         [
+          continuation_rank,
           PRIORITY_RANKS.fetch(labels[:priority]),
           status_for(issue) == "in_progress" ? 0 : 1,
           @issue_order.fetch(issue["id"].to_s, @issue_order.size),
@@ -84,7 +86,10 @@ module GithubIssueOrganizerEngine
         labels = scheduling_labels_for(issue)
         hours = EFFORT_HOURS.fetch(labels[:effort])
         preferred_developer_id = preferred_developer_id_for(issue)
-        assigned_developer_id = issue["assigned_developer_id"].to_s.strip
+        carried_developer_id = @developer_ids.find do |id|
+          developer_match?(id, issue["carried_developer_id"])
+        end
+        assigned_developer_id = (carried_developer_id || issue["assigned_developer_id"]).to_s.strip
         assigned_developer_id = nil if assigned_developer_id.empty?
         eligible_developers = if assigned_developer_id
           developers.select { |candidate| candidate[:id].casecmp?(assigned_developer_id) }
@@ -118,7 +123,7 @@ module GithubIssueOrganizerEngine
           "github_assignee_login" => first_github_assignee(issue)&.fetch("login", nil),
           "github_assignee_matches" => developer_match?(developer[:id], preferred_developer_id),
           "manually_assigned" => issue["manually_assigned"] == true,
-          "starts_on" => starts_on.iso8601,
+          "starts_on" => issue["carried_starts_on"] || starts_on.iso8601,
           "ends_on" => ends_on.iso8601,
           "work_segments" => segments,
           "developer_id" => developer[:id],

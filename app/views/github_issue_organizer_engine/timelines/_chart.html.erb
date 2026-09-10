@@ -56,11 +56,19 @@
               previous_end.hour == 17 &&
               segment_start.hour == 9
 
-            if continues_next_weekday
+            if continues_next_weekday && (previous_end.to_date < timeline.starts_on) == (segment_start.to_date < timeline.starts_on)
               previous["ends_at"] = segment.fetch("ends_at")
             else
               merged << segment.dup
             end
+          end
+          if item.starts_on < timeline.starts_on && Time.zone.parse(segments.first.fetch("starts_at")).to_date >= timeline.starts_on
+            visual_segments.unshift({
+              "starts_at" => "#{item.starts_on.iso8601}T09:00:00",
+              "ends_at" => "#{(timeline.starts_on - 1).iso8601}T17:00:00",
+              "historical" => true,
+              "synthetic" => true
+            })
           end
           visual_segments.map { |segment| [ item, segment ] }
         end %>
@@ -70,6 +78,7 @@
           data-unavailability-selection-track
           <%= "data-timeline-issue-drop-track" if local_assigns[:editable_issues] %>
           data-developer-id="<%= developer_id %>"
+          data-timeline-start-date="<%= timeline.starts_on.iso8601 %>"
           data-start-date="<%= first_date.iso8601 %>"
           data-slot-count="<%= dates.length * 8 %>"
           data-weekend-day-indexes="<%= weekend_day_indexes.join(",") %>"
@@ -124,6 +133,7 @@
           <% end %>
           <% placements.each do |item, segment| %>
             <% segment_start = Time.zone.parse(segment.fetch("starts_at")) %>
+            <% segment["historical"] = true if segment_start.to_date < timeline.starts_on %>
             <% segment_end = Time.zone.parse(segment.fetch("ends_at")) %>
             <% start_hour = [ [ segment_start.hour - 9, 0 ].max, 8 ].min %>
             <% end_hour = [ [ segment_end.hour - 9, 0 ].max, 8 ].min %>
@@ -131,9 +141,9 @@
             <% end_column = ((segment_end.to_date - first_date).to_i * 8) + end_hour + 1 %>
             <% end_column = start_column + 1 if end_column <= start_column %>
             <% priority_name = item.priority.delete_prefix("Priority: ") %>
-            <article class="tif-timeline-task tif-has-priority is-priority-<%= priority_name.downcase %>"
+            <article class="tif-timeline-task tif-has-priority is-priority-<%= priority_name.downcase %> <%= "is-historical" if segment["historical"] %>"
               data-timeline-issue="<%= item.id %>"
-              <% if local_assigns[:editable_issues] %>
+              <% if local_assigns[:editable_issues] && !segment["synthetic"] %>
                 data-timeline-item-move-url="<%= timeline_item_path(timeline, item) %>"
                 data-item-start-column="<%= start_column %>"
                 draggable="true"
@@ -156,6 +166,9 @@
                 <span class="tif-manual-assignment-marker"
                   title="Manually assigned in this timeline"
                   aria-label="Manually assigned in this timeline">M</span>
+              <% end %>
+              <% if segment["historical"] %>
+                <span class="tif-timeline-history-label">Started earlier · before <%= l timeline.starts_on, format: :long %></span>
               <% end %>
               <span class="tif-timeline-task-meta">
                 <%= item.repository %>#<%= item.issue_number %> ·
