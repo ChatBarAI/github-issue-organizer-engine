@@ -62,3 +62,22 @@ for (const response of ['unchanged', 'error']) {
   });
 }
 }
+
+test('date header opens the gap action with the selected cutoff and supports cancel', () => {
+  const root = element(), button = element(), dialog = element(), cancel = element();
+  const input = element(), label = element();
+  button.dataset.fillGapsDate = '2026-09-14';
+  dialog.children['[data-fill-gaps-input]'] = input;
+  dialog.children['[data-fill-gaps-label]'] = label;
+  dialog.showModal = () => { dialog.open = true; };
+  dialog.close = () => { dialog.open = false; };
+  root.children['#tif-fill-gaps-dialog'] = dialog;
+  root.querySelectorAll = selector => selector === '[data-fill-gaps-date]' ? [button] : selector === '[data-close-fill-gaps]' ? [cancel] : [];
+  vm.runInNewContext(editor + '\ninitializeTimelineIssueEditor(root);', { root });
+  button.listeners.click();
+  assert.equal(dialog.open, true);
+  assert.equal(input.value, '2026-09-14');
+  assert.equal(label.textContent, '2026-09-14');
+  cancel.listeners.click();
+  assert.equal(dialog.open, false);
+});

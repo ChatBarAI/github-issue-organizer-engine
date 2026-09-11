@@ -362,6 +362,7 @@
   text-align: center;
 }
 
+#tif-fill-gaps-dialog,
 #tif-past-days-dialog,
 #tif-timeline-dialog,
 #tif-add-unavailability-dialog,
@@ -377,6 +378,7 @@
   color: var(--tif-text);
 }
 
+#tif-fill-gaps-dialog::backdrop,
 #tif-past-days-dialog::backdrop,
 #tif-timeline-dialog::backdrop,
 #tif-add-unavailability-dialog::backdrop,
@@ -384,6 +386,7 @@
   background: rgba(0, 0, 0, 0.58);
 }
 
+#tif-fill-gaps-dialog h2,
 #tif-past-days-dialog h2,
 #tif-timeline-dialog h2,
 #tif-add-unavailability-dialog h2,
@@ -2005,4 +2008,33 @@
 
 .tif-move-feedback[data-kind="error"] .tif-move-feedback-icon {
   color: var(--tif-danger);
+}
+
+.github-issue-organizer-engine .tif-date-action {
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.github-issue-organizer-engine .tif-date-action:hover {
+  text-decoration: underline;
+}
+
+.github-issue-organizer-engine .tif-date-action:focus-visible {
+  outline: 2px solid var(--tif-accent);
+  outline-offset: -2px;
+}
+
+.tif-timeline-chart-view.is-compact-weekends .tif-timeline-tick.is-weekend:has(.tif-date-action)::after {
+  content: none;
+}
+
+.tif-timeline-chart-view.is-compact-weekends .tif-timeline-tick.is-weekend .tif-date-action::after {
+  content: attr(data-compact-label);
+  font-size: 0.7rem;
 }

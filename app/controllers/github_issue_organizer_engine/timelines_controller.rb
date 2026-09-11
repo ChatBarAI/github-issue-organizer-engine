@@ -1,6 +1,6 @@
 module GithubIssueOrganizerEngine
   class TimelinesController < ApplicationController
-    before_action :set_timeline, only: [ :show, :edit, :edit_copy, :update, :destroy, :make_current ]
+    before_action :set_timeline, only: [ :show, :edit, :edit_copy, :update, :destroy, :make_current, :fill_gaps ]
 
     def index
       @timelines = Timeline.includes(:created_by, :edited_by, :source_timeline, :items)
@@ -37,6 +37,14 @@ module GithubIssueOrganizerEngine
         starts_on: timeline_params.fetch(:starts_on)
       ).call
       redirect_to edit_timeline_path(@timeline), notice: "Timeline updated and rescheduled."
+    rescue ActiveRecord::RecordInvalid, ArgumentError => error
+      redirect_to edit_timeline_path(@timeline), alert: error.message
+    end
+
+    def fill_gaps
+      TimelineGapFiller.new(timeline: @timeline, from_date: params[:from_date]).call
+      redirect_to edit_timeline_path(@timeline, extra_past_days: params[:extra_past_days].to_i.clamp(0, 365)),
+        notice: "Time gaps filled from #{params[:from_date]}."
     rescue ActiveRecord::RecordInvalid, ArgumentError => error
       redirect_to edit_timeline_path(@timeline), alert: error.message
     end

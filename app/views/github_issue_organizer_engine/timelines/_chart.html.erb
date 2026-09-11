@@ -50,7 +50,13 @@
           <div class="tif-timeline-tick <%= "is-weekend" if date.saturday? || date.sunday? %>"
             data-compact-label="<%= date.saturday? ? "Sa" : "Su" if date.saturday? || date.sunday? %>"
             title="<%= l date, format: :long %>">
-            <%= l date, format: "%a %-d %b" %>
+            <% if local_assigns[:editable_issues] %>
+              <button type="button" class="tif-date-action" data-compact-label="<%= date.saturday? ? "Sa" : "Su" %>" data-fill-gaps-date="<%= date.iso8601 %>"
+                aria-label="Fill gaps from <%= l date, format: :long %>"
+                aria-haspopup="dialog" aria-controls="tif-fill-gaps-dialog"><%= l date, format: "%a %-d %b" %></button>
+            <% else %>
+              <%= l date, format: "%a %-d %b" %>
+            <% end %>
           </div>
         <% end %>
       </div>
@@ -159,7 +165,6 @@
                 data-item-start-column="<%= start_column %>"
                 draggable="true"
                 tabindex="0"
-                aria-describedby="tif-issue-drag-help"
                 aria-keyshortcuts="Alt+Shift+ArrowLeft Alt+Shift+ArrowRight Alt+Shift+ArrowUp Alt+Shift+ArrowDown"
               <% end %>
               style="grid-column: <%= start_column %> / <%= end_column %>; grid-row: 1">

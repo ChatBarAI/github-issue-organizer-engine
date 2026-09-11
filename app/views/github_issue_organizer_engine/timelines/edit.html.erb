@@ -2,7 +2,7 @@
 
 <div class="github-issue-organizer-engine" data-unavailability-editor data-timeline-issue-editor>
   <header class="tif-heading tif-timeline-heading">
-    <h1>Edit timeline #<%= @timeline.id %></h1>
+    <h1 title="Drop into empty time to place an issue without shifting other work. Drop onto another issue to reorder the queue, or onto another developer’s row to reassign. For keyboard controls, focus an issue and press Alt + Shift + an arrow key.">Edit timeline #<%= @timeline.id %></h1>
     <div class="tif-timeline-heading-meta">
       <p>
         <span class="tif-timeline-status is-<%= @timeline.status %>"><%= timeline_status_label(@timeline) %></span> ·
@@ -73,10 +73,6 @@
 
   <section class="tif-panel tif-editor-section" aria-labelledby="tif-updated-schedule-title">
     <h2 id="tif-updated-schedule-title" class="tif-visually-hidden">Updated schedule</h2>
-    <details class="tif-drag-help">
-      <summary>How to move issues</summary>
-      <p id="tif-issue-drag-help">Drop into empty time to place an issue without shifting other work. Drop onto another issue to reorder the queue, or onto another developer’s row to reassign. For keyboard controls, focus an issue and press Alt + Shift + an arrow key.</p>
-    </details>
     <div class="tif-move-feedback" data-timeline-issue-move-status hidden>
       <span class="tif-move-feedback-icon" data-move-status-icon aria-hidden="true">i</span>
       <div class="tif-move-feedback-copy" role="status" aria-live="polite" aria-atomic="true">
@@ -94,6 +90,22 @@
       chart_id: "tif-updated-schedule-chart" %>
     <%= render "informational_issues", timeline: @timeline %>
   </section>
+
+  <dialog id="tif-fill-gaps-dialog" aria-labelledby="tif-fill-gaps-title">
+    <div class="tif-dialog-header">
+      <h2 id="tif-fill-gaps-title">Fill gaps from <span data-fill-gaps-label></span></h2>
+      <button type="button" class="tif-dialog-close" data-close-fill-gaps aria-label="Close dialog">×</button>
+    </div>
+    <p>Move issues starting on or after this date earlier across all developer rows, keeping their developer and queue order. Earlier issues stay in place. Weekends and unavailable time are respected.</p>
+    <%= form_with url: fill_gaps_timeline_path(@timeline), method: :patch do %>
+      <%= hidden_field_tag :from_date, nil, data: { fill_gaps_input: true } %>
+      <%= hidden_field_tag :extra_past_days, @extra_past_days %>
+      <div class="tif-dialog-actions">
+        <button type="button" class="tif-account-link" data-close-fill-gaps>Cancel</button>
+        <%= submit_tag "Fill gaps from this date", class: "tif-primary" %>
+      </div>
+    <% end %>
+  </dialog>
 
   <dialog id="tif-past-days-dialog" aria-labelledby="tif-past-days-title">
     <div class="tif-dialog-header">

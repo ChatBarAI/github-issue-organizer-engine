@@ -662,6 +662,18 @@
     if (root.dataset.timelineIssueEditorInitialized === "true") return;
     root.dataset.timelineIssueEditorInitialized = "true";
 
+    const fillGapsDialog = root.querySelector("#tif-fill-gaps-dialog");
+    root.querySelectorAll("[data-fill-gaps-date]").forEach(button => {
+      button.addEventListener("click", () => {
+        fillGapsDialog.querySelector("[data-fill-gaps-input]").value = button.dataset.fillGapsDate;
+        fillGapsDialog.querySelector("[data-fill-gaps-label]").textContent = button.dataset.fillGapsDate;
+        fillGapsDialog.showModal();
+      });
+    });
+    root.querySelectorAll("[data-close-fill-gaps]").forEach(button => {
+      button.addEventListener("click", () => fillGapsDialog.close());
+    });
+
     const pastDaysDialog = root.querySelector("#tif-past-days-dialog");
     root.querySelector("[data-open-past-days]")?.addEventListener("click", () => {
       pastDaysDialog.showModal();
@@ -1126,6 +1138,7 @@
   document.addEventListener("turbo:load", initializeAll);
   document.addEventListener("turbo:before-cache", () => {
     document.querySelector("#tif-past-days-dialog[open]")?.close();
+    document.querySelector("#tif-fill-gaps-dialog[open]")?.close();
     document.querySelectorAll("[data-issue-history]").forEach(root => {
       delete root.dataset.historyInitialized;
       root.querySelectorAll("[data-history-highlight]").forEach(button => button.setAttribute("aria-pressed", "false"));
