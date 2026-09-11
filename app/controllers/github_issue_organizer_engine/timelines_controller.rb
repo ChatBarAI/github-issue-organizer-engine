@@ -14,6 +14,11 @@ module GithubIssueOrganizerEngine
       @issue_snapshots = IssueSnapshot.order(:captured_at, :id).to_a
     end
 
+    def current
+      @timeline = Timeline.current.includes(:items, :unavailabilities, :created_by, :edited_by, :source_timeline).first
+      render :show if @timeline
+    end
+
     def show
     end
 

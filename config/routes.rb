@@ -1,5 +1,5 @@
 GithubIssueOrganizerEngine::Engine.routes.draw do
-  root "issues#index"
+  root "timelines#current"
 
   resources :issues, only: [ :index ] do
     collection do

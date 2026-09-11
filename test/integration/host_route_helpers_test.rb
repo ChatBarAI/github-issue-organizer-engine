@@ -5,6 +5,41 @@ require "rails/test_help"
 require "minitest/mock"
 
 class HostRouteHelpersTest < ActionDispatch::IntegrationTest
+  test "root offers the organizer when there is no current timeline" do
+    with_current_timeline(nil) { get "/admin/github-issues" }
+
+    assert_response :success
+    assert_select "h1", text: "Current timeline"
+    assert_select "p", text: "No current timeline has been selected."
+    assert_select "a[href='/admin/github-issues/issues']", text: "Open organizer"
+  end
+
+  test "root renders the current timeline directly" do
+    timeline = Object.new
+    {
+      id: 42, to_param: "42", status: "current", draft?: false,
+      starts_on: Date.current, ends_on: Date.current, developer_ids: [ "dev" ],
+      created_by: nil, created_by_id: 1, created_at: Time.current,
+      original_created_at: Time.current, edited_by_id: nil, source_timeline_id: nil,
+      items: [], in_review_issues: [], blocked_issues: [], needs_effort_issues: []
+    }.each { |name, value| timeline.define_singleton_method(name) { value } }
+
+    with_current_timeline(timeline) { get "/admin/github-issues" }
+
+    assert_response :success
+    assert_select "h1", text: "Timeline #42"
+    assert_select ".tif-timeline-status", text: "Current"
+    assert_select "a[href='/admin/github-issues/issues']", text: "Organizer"
+    assert_select "a[href='/admin/github-issues/timelines']", text: "All timelines"
+  end
+
+  def with_current_timeline(timeline)
+    scope = Object.new
+    scope.define_singleton_method(:includes) { |*| scope }
+    scope.define_singleton_method(:first) { timeline }
+    GithubIssueOrganizerEngine::Timeline.stub(:current, scope) { yield }
+  end
+
   test "manual ranking accepts subsets and empty orders but rejects duplicates and unknown issues" do
     controller = GithubIssueOrganizerEngine::IssuesController.new
     groups = [{"issues" => [{"id" => "10"}, {"id" => "20"}, {"id" => "30"}]}]
@@ -67,8 +102,8 @@ class HostRouteHelpersTest < ActionDispatch::IntegrationTest
     GithubIssueOrganizerEngine.configuration.repositories = @original_repositories
   end
 
-  test "authorized engine root renders host callback and layout routes" do
-    get "/admin/github-issues"
+  test "authorized organizer renders host callback and layout routes" do
+    get "/admin/github-issues/issues"
 
     assert_response :success
     assert_select "a[href='/admin']", text: "Admin"

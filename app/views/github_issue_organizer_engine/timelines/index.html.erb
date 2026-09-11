@@ -14,7 +14,8 @@
           class: "tif-account-link tif-danger-button",
           form: { data: { turbo_confirm: "Delete all draft timelines? This cannot be undone." } } %>
       <% end %>
-      <%= link_to "New draft", root_path, class: "tif-account-link" %>
+      <%= link_to "Current timeline", root_path, class: "tif-account-link" %>
+      <%= link_to "New draft", issues_path, class: "tif-account-link" %>
     </nav>
   </header>
 

@@ -10,6 +10,7 @@
       <h1>GitHub Issue Organizer</h1>
     </div>
     <nav class="tif-heading-links" aria-label="Issue finder navigation">
+      <%= link_to "Current timeline", root_path, class: "tif-account-link" %>
       <%= link_to "Settings", settings_path, class: "tif-account-link" %>
       <%= link_to "Timelines", timelines_path, class: "tif-account-link" %>
       <%= link_to github_identity_path, class: "tif-account-link" do %>
