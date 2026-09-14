@@ -1,5 +1,6 @@
 require_relative "../../test_helper"
 require_relative "../../../app/services/github_issue_organizer_engine/timeline_rescheduler"
+require_relative "../../../app/services/github_issue_organizer_engine/timeline_item_mover"
 
 module GithubIssueOrganizerEngine
   class TimelineReschedulerTest < Minitest::Test
@@ -118,7 +119,45 @@ module GithubIssueOrganizerEngine
       assert_equal "2026-09-21", moving.ends_on
     end
 
+    def test_inserts_urgent_work_before_a_continuation_and_preserves_the_order_on_later_moves
+      ongoing = fake_item(id: 1, issue_number: 11, position: 1)
+      ongoing.effort_hours = 16
+      ongoing.starts_on = Date.new(2026, 9, 10)
+      history = {"starts_at" => "2026-09-10T09:00:00+00:00", "ends_at" => "2026-09-10T17:00:00+00:00"}
+      ongoing.work_segments = [history,
+        {"starts_at" => "2026-09-11T09:00:00+00:00", "ends_at" => "2026-09-11T17:00:00+00:00"}]
+      urgent = fake_item(id: 2, issue_number: 22, position: 2)
+      following = fake_item(id: 3, issue_number: 33, position: 3)
+      urgent.starts_on = following.starts_on = Date.new(2026, 9, 14)
+      timeline = FakeTimeline.new(starts_on: Date.new(2026, 9, 11),
+        developer_ids: ["developer-a"], items: FakeItems.new([ongoing, urgent, following]), unavailabilities: [])
+
+      TimelineItemMover.new(timeline: timeline, item: urgent, developer_id: "developer-a", before_item_id: ongoing.id).call
+
+      assert_equal "2026-09-11T09:00:00+00:00", urgent.work_segments.first.fetch("starts_at")
+      assert_equal "2026-09-11T13:00:00+00:00", ongoing.work_segments[1].fetch("starts_at")
+      assert_equal history, ongoing.work_segments.first
+      assert_equal 16, hours_in(ongoing.work_segments)
+
+      # ActiveRecord casts the dates written by the rescheduler.
+      timeline.items.each { |item| item.starts_on = Date.parse(item.starts_on) }
+      TimelineItemMover.new(timeline: timeline, item: following, developer_id: "developer-a", before_item_id: ongoing.id).call
+
+      assert_equal "2026-09-11T09:00:00+00:00", urgent.work_segments.first.fetch("starts_at")
+      assert_equal "2026-09-11T13:00:00+00:00", following.work_segments.first.fetch("starts_at")
+      assert_equal "2026-09-14T09:00:00+00:00", ongoing.work_segments[1].fetch("starts_at")
+      assert_equal history, ongoing.work_segments.first
+      assert_equal 16, hours_in(ongoing.work_segments)
+      assert_equal [2, 3, 1], timeline.items.sort_by(&:position).map(&:id)
+    end
+
     private
+
+    def hours_in(segments)
+      segments.sum do |segment|
+        (DateTime.iso8601(segment.fetch("ends_at")) - DateTime.iso8601(segment.fetch("starts_at"))) * 24
+      end
+    end
 
     def fake_item(id:, issue_number:, position:)
       FakeItem.new(

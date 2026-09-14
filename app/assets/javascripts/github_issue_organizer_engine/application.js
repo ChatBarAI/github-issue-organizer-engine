@@ -713,20 +713,23 @@
       draggedMoveUrl = null;
     };
 
-    const beforeIssueAt = (track, clientX) => {
+    const orderedIssues = track => {
       const issues = new Map();
-      track.querySelectorAll("[data-timeline-item-move-url]").forEach(task => {
-        const issueId = task.dataset.timelineIssue;
-        if (issueId === draggedIssueId) return;
-
-        const current = issues.get(issueId);
-        if (!current || Number(task.dataset.itemStartColumn) < Number(current.dataset.itemStartColumn)) {
-          issues.set(issueId, task);
-        }
-      });
+      // Use the first remaining block for interrupted issues, before considering history.
+      Array.from(track.querySelectorAll("[data-timeline-item-move-url]"))
+        .sort((left, right) => Number(left.classList.contains("is-historical")) - Number(right.classList.contains("is-historical")) ||
+          Number(left.dataset.itemStartColumn) - Number(right.dataset.itemStartColumn))
+        .forEach(task => {
+          if (!issues.has(task.dataset.timelineIssue)) issues.set(task.dataset.timelineIssue, task);
+        });
 
       return Array.from(issues.values())
-        .sort((left, right) => Number(left.dataset.itemStartColumn) - Number(right.dataset.itemStartColumn))
+        .sort((left, right) => Number(left.dataset.itemStartColumn) - Number(right.dataset.itemStartColumn));
+    };
+
+    const beforeIssueAt = (track, clientX) => {
+      return orderedIssues(track)
+        .filter(task => task.dataset.timelineIssue !== draggedIssueId)
         .find(task => clientX < task.getBoundingClientRect().left + (task.getBoundingClientRect().width / 2))
         ?.dataset.timelineIssue || null;
     };
@@ -821,11 +824,7 @@
 
         const sourceTrack = task.closest("[data-timeline-issue-drop-track]");
         const sourceTrackIndex = tracks.indexOf(sourceTrack);
-        const sourceIssueIds = Array.from(new Map(
-          Array.from(sourceTrack.querySelectorAll("[data-timeline-item-move-url]"))
-            .sort((left, right) => Number(left.dataset.itemStartColumn) - Number(right.dataset.itemStartColumn))
-            .map(issueTask => [ issueTask.dataset.timelineIssue, issueTask ])
-        ).keys());
+        const sourceIssueIds = orderedIssues(sourceTrack).map(issueTask => issueTask.dataset.timelineIssue);
         const sourceIssueIndex = sourceIssueIds.indexOf(task.dataset.timelineIssue);
         let targetTrack = sourceTrack;
         let beforeItemId;

@@ -64,7 +64,8 @@ module GithubIssueOrganizerEngine
       schedulable.sort_by! do |issue|
         continuation_rank = issue["carried_starts_on"] ? 0 : 1
         if @strict_issue_order
-          next [ continuation_rank, @issue_order.fetch(issue["id"].to_s, @issue_order.size), parse_time(issue["created_at"]) ]
+          # Manual ordering applies to remaining work; historical segments stay fixed.
+          next [ @issue_order.fetch(issue["id"].to_s, @issue_order.size), parse_time(issue["created_at"]) ]
         end
 
         labels = scheduling_labels_for(issue)

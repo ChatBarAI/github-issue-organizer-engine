@@ -16,6 +16,7 @@
           · revision of Timeline #<%= @timeline.source_timeline_id %>
         <% end %>
         · Drag issues to reorder a developer's work or move it directly to another developer.
+        Reordering preserves past work and moves the remaining hours; drop before an in-progress issue to interrupt it.
       </p>
       <% if @timeline.items.any? %>
         <label class="tif-switch" title="Make Saturday and Sunday narrower to show more days">

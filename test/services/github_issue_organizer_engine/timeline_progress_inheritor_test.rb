@@ -31,7 +31,7 @@ module GithubIssueOrganizerEngine
       assert_equal [issue], TimelineProgressInheritor.new(issues: [issue], timeline: nil, starts_on: "2026-09-10").call
     end
 
-    def test_continues_existing_work_before_higher_priority_and_manually_ordered_work
+    def test_prioritizes_existing_work_unless_explicitly_reordered
       backlog = issue.merge(
         "id" => 2, "number" => 2,
         "assigned_developer_id" => "alice",
@@ -44,10 +44,12 @@ module GithubIssueOrganizerEngine
           strict_issue_order: strict_order
         ).call
 
-        continuation, new_work = result.scheduled
-        assert_equal 1, continuation.fetch("issue_number")
+        assert_equal strict_order ? [2, 1] : [1, 2], result.scheduled.map { |item| item.fetch("issue_number") }
+        continuation = result.scheduled.find { |item| item.fetch("issue_number") == 1 }
+        new_work = result.scheduled.find { |item| item.fetch("issue_number") == 2 }
         assert_equal "alice", continuation.fetch("developer_id")
         assert_equal "2026-09-03T09:00:00+00:00", continuation.fetch("work_segments").first.fetch("starts_at")
+        assert_equal strict_order ? "2026-09-11" : "2026-09-10", continuation.fetch("ends_on")
         assert_equal "2026-09-10", new_work.fetch("starts_on")
       end
     end

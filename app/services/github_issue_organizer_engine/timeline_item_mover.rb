@@ -98,8 +98,12 @@ module GithubIssueOrganizerEngine
 
     def scheduled_items
       @scheduled_items ||= @timeline.items.sort_by do |item|
-        first_segment_start = Array(item.work_segments).first&.fetch("starts_at", nil)
-        [ item.starts_on, first_segment_start.to_s, item.position ]
+        segments = Array(item.work_segments)
+        remaining_segment = segments.find do |segment|
+          DateTime.iso8601(segment.fetch("ends_at")) > @timeline.starts_on.to_datetime
+        end
+        first_segment_start = (remaining_segment || segments.first)&.fetch("starts_at", nil)
+        [ first_segment_start ? DateTime.iso8601(first_segment_start) : item.starts_on.to_datetime, item.position ]
       end
     end
   end

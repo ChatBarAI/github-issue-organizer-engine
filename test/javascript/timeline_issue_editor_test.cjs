@@ -63,6 +63,50 @@ for (const response of ['unchanged', 'error']) {
 }
 }
 
+for (const input of ['drop', 'keyboard']) {
+  test(`${input} inserts before remaining work even when the issue has historical blocks`, async () => {
+    const root = element(), track = element(), moving = element();
+    const history = element(), remaining = element(), continuation = element();
+    const tasks = [history, remaining, continuation, moving];
+    root.querySelectorAll = selector => selector === '[data-timeline-issue-drop-track]' ? [track] : selector === '[data-timeline-item-move-url]' ? tasks : [];
+    track.dataset = { developerId: 'alice', startDate: '2026-09-10', timelineStartDate: '2026-09-11' };
+    const days = [0, 80, 160, 240].map(left => ({ getBoundingClientRect: () => ({ left, right: left + 80, width: 80 }) }));
+    tasks.forEach((task, index) => {
+      task.dataset = { timelineIssue: index === 3 ? '2' : '1', timelineItemMoveUrl: `/items/${index === 3 ? '2' : '1'}`, itemStartColumn: String(index * 8 + 1) };
+      task.getBoundingClientRect = days[index].getBoundingClientRect;
+      task.closest = () => track;
+    });
+    history.classList.contains = name => name === 'is-historical';
+    track.querySelectorAll = selector => selector === '.tif-timeline-day-column' ? days : tasks;
+    const requests = [];
+    vm.runInNewContext(editor + '\ninitializeTimelineIssueEditor(root);', {
+      root, parseDate: value => new Date(value + 'T00:00:00'), document: { querySelector() { return null; } },
+      fetch: async (url, options) => {
+        requests.push(JSON.parse(options.body).timeline_item);
+        return { ok: true, json: async () => ({ changed: false }) };
+      }
+    });
+    if (input === 'drop') {
+      moving.listeners.dragstart({ dataTransfer: { setData() {} } });
+      track.listeners.drop({ preventDefault() {}, clientX: 80 });
+    } else {
+      moving.listeners.keydown({ target: { closest() { return null; } }, altKey: true, shiftKey: true, key: 'ArrowLeft', preventDefault() {} });
+    }
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(requests.length, 1);
+    assert.equal(requests[0].before_item_id, '1');
+    assert.equal(requests[0].starts_at, null);
+
+    // Once the urgent issue is first, moving it right must use future queue order.
+    moving.dataset.itemStartColumn = '9';
+    remaining.dataset.itemStartColumn = '13';
+    moving.listeners.keydown({ target: { closest() { return null; } }, altKey: true, shiftKey: true, key: 'ArrowRight', preventDefault() {} });
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(requests.length, 2);
+    assert.equal(requests[1].before_item_id, null);
+  });
+}
+
 test('date header opens the gap action with the selected cutoff and supports cancel', () => {
   const root = element(), button = element(), dialog = element(), cancel = element();
   const input = element(), label = element();
