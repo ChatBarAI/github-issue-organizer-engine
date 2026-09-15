@@ -44,6 +44,11 @@
                     <%= group[:badge] %>
                   </div>
                   <div class="tif-issue-card-content">
+                    <div class="tif-issue-card-position tif-issue-card-number"
+                      title="<%= issue["repository"] %>#<%= issue["issue_number"] %>"
+                      aria-label="Issue <%= issue["repository"] %>#<%= issue["issue_number"] %>">
+                      #<%= issue["issue_number"] %>
+                    </div>
                     <h3>
                       <%= link_to issue["title"], issue["url"],
                         target: "_blank", rel: "noopener noreferrer",

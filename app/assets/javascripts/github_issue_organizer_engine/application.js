@@ -293,6 +293,12 @@
 
       const content = document.createElement("div");
       content.className = "tif-issue-card-content";
+      const issueNumber = document.createElement("div");
+      issueNumber.className = "tif-issue-card-position tif-issue-card-number";
+      issueNumber.textContent = `#${item.issue_number}`;
+      issueNumber.title = `${item.repository}#${item.issue_number}`;
+      issueNumber.setAttribute("aria-label", `Issue ${item.repository}#${item.issue_number}`);
+      content.append(issueNumber);
       const title = document.createElement("h3");
       const link = document.createElement("a");
       link.href = item.url;
@@ -620,9 +626,48 @@
     generateButton.addEventListener("click", () => requestTimeline());
   };
 
+  const initializeIssueSearch = root => {
+    const clearButton = root.querySelector("[data-issue-search-clear]");
+    const input = root.querySelector("[data-issue-search-input]");
+    const status = root.querySelector("[data-issue-search-status]");
+    if (!clearButton || !input || !status) return;
+
+    const cards = Array.from(root.querySelectorAll("[data-timeline-issue-card]"));
+    const filter = () => {
+      clearButton.hidden = input.value.length === 0;
+      const query = input.value.trim().toLowerCase();
+      const number = /^#?\d+$/.test(query) ? query.replace(/^#/, "") : null;
+      let count = 0;
+      cards.forEach(card => {
+        const matches = !query || (number !== null
+          ? card.dataset.issueNumber === number
+          : card.dataset.issueTitle.toLowerCase().includes(query));
+        card.hidden = !matches;
+        if (matches) count += 1;
+      });
+      status.textContent = !query ? "" : count === 0
+        ? "No scheduled issues match your search."
+        : `${count} of ${cards.length} scheduled issues shown.`;
+    };
+    const clear = () => {
+      input.value = "";
+      filter();
+      input.focus();
+    };
+    clearButton.addEventListener("click", clear);
+    input.addEventListener("input", filter);
+    input.addEventListener("keydown", event => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      clear();
+    });
+    filter();
+  };
+
   const initializeTimelineDetails = root => {
     if (root.dataset.timelineDetailsInitialized === "true") return;
     root.dataset.timelineDetailsInitialized = "true";
+    initializeIssueSearch(root);
 
     const chart = root.querySelector(".tif-timeline-chart");
     const tasks = Array.from(root.querySelectorAll("[data-timeline-issue]"));

@@ -159,6 +159,7 @@
 }
 
 .github-issue-organizer-engine input[type="text"],
+.github-issue-organizer-engine input[type="search"],
 .github-issue-organizer-engine input[type="date"],
 .github-issue-organizer-engine input[type="datetime-local"],
 .github-issue-organizer-engine input[type="time"],
@@ -1305,6 +1306,60 @@
   font-size: 1.1rem;
 }
 
+.tif-scheduled-issues-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.tif-issue-search {
+  position: relative;
+  width: 320px;
+  max-width: 100%;
+  margin-left: auto;
+}
+
+.github-issue-organizer-engine .tif-issue-search input[type="search"] {
+  padding-right: 40px;
+}
+
+.tif-issue-search input::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+}
+
+.github-issue-organizer-engine .tif-issue-search-clear {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 32px;
+  height: 32px;
+  min-height: 32px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--tif-muted);
+  font-size: 1.3rem;
+  line-height: 1;
+}
+
+.github-issue-organizer-engine .tif-issue-search-clear:hover {
+  background: transparent;
+  color: var(--tif-accent);
+}
+
+.tif-timeline-issues [data-issue-search-status]:empty {
+  margin: 0;
+}
+
+.tif-timeline-issues [hidden],
+.tif-timeline-issues .tif-issue-card[hidden] {
+  display: none;
+}
+
 .tif-issue-card-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -1368,8 +1423,16 @@
   padding: 10px;
 }
 
-.tif-timeline-issues .tif-issue-card-position {
+.tif-compact-issue-cards .tif-informational-card {
+  padding-right: 10px;
+}
+
+.tif-compact-issue-cards .tif-issue-card-number {
   float: right;
+  width: auto;
+  min-width: 26px;
+  padding: 0 6px;
+  border-radius: 13px;
   margin: 0 0 4px 8px;
 }
 
