@@ -48,6 +48,7 @@
       <div class="tif-timeline-axis">
         <% dates.each do |date| %>
           <div class="tif-timeline-tick <%= "is-weekend" if date.saturday? || date.sunday? %>"
+            <%= "data-timeline-start-tick" if date == timeline.starts_on %>
             data-compact-label="<%= date.saturday? ? "Sa" : "Su" if date.saturday? || date.sunday? %>"
             title="<%= l date, format: :long %>">
             <% if local_assigns[:editable_issues] %>

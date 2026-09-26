@@ -69,6 +69,23 @@
     });
   };
 
+  const initializeTimelineScroll = (container = document) => {
+    container.querySelectorAll("[data-timeline-chart-view]").forEach(view => {
+      if (view.dataset.scrollInitialized === "true") return;
+      const scroll = view.querySelector(".tif-timeline-chart-scroll");
+      const start = view.querySelector("[data-timeline-start-tick]");
+      if (!scroll || !start || !scroll.clientWidth) return;
+
+      const labelWidth = view.querySelector(".tif-timeline-corner").getBoundingClientRect().width;
+      const dateAreaWidth = Math.max(0, scroll.clientWidth - labelWidth);
+      const startOffset = start.getBoundingClientRect().left -
+        scroll.getBoundingClientRect().left - scroll.clientLeft + scroll.scrollLeft;
+      // Keep a quarter of the visible date area for historical work.
+      scroll.scrollLeft = Math.max(0, startOffset - labelWidth - dateAreaWidth * 0.25);
+      view.dataset.scrollInitialized = "true";
+    });
+  };
+
   const renderTimelineChart = (items, developerIds, timelineStartsOn) => {
     const firstScheduledDate = items.map(item => item.starts_on).sort()[0];
     const firstDate = [timelineStartsOn, firstScheduledDate].filter(Boolean).sort()[0];
@@ -123,6 +140,7 @@
       const date = parseDate(value);
       const tick = document.createElement("div");
       tick.className = "tif-timeline-tick";
+      if (value === timelineStartsOn) tick.dataset.timelineStartTick = "";
       if (date.getDay() === 0 || date.getDay() === 6) {
         tick.classList.add("is-weekend");
         tick.dataset.compactLabel = date.getDay() === 6 ? "Sa" : "Su";
@@ -401,6 +419,7 @@
     }
 
     container.hidden = false;
+    initializeTimelineScroll(container);
   };
 
   const renderRanking = (container, payload, submitRanking) => {
@@ -1172,6 +1191,7 @@
   const initializeAll = () => {
     document.querySelectorAll("[data-issue-history]").forEach(initializeIssueHistory);
     initializeCompactWeekendToggles();
+    initializeTimelineScroll();
     document.querySelectorAll(".github-issue-organizer-engine[data-timeline-url]").forEach(initialize);
     document.querySelectorAll(".github-issue-organizer-engine[data-timeline-details]").forEach(initializeTimelineDetails);
     document.querySelectorAll(".github-issue-organizer-engine[data-timeline-issue-editor]").forEach(initializeTimelineIssueEditor);
@@ -1181,6 +1201,9 @@
   document.addEventListener("DOMContentLoaded", initializeAll);
   document.addEventListener("turbo:load", initializeAll);
   document.addEventListener("turbo:before-cache", () => {
+    document.querySelectorAll("[data-timeline-chart-view]").forEach(view => {
+      delete view.dataset.scrollInitialized;
+    });
     document.querySelector("#tif-past-days-dialog[open]")?.close();
     document.querySelector("#tif-fill-gaps-dialog[open]")?.close();
     document.querySelectorAll("[data-issue-history]").forEach(root => {

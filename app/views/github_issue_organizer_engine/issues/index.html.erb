@@ -172,7 +172,7 @@
         <input id="tif-starts-on" type="date" required>
       </div>
       <label class="tif-switch tif-save-option"
-             title="Preserve earlier start dates for matching in-progress issues from the current timeline. Future work still uses the full effort estimate.">
+             title="Carry over matching open issues scheduled to start before the new start date in the Current timeline, regardless of their GitHub in-progress label. Preserve recorded work and the developer, and schedule only remaining effort. Blocked and review issues stay informational.">
         <input id="tif-carry-over-in-progress" type="checkbox" role="switch" checked>
         <span class="tif-switch-control" aria-hidden="true"></span>
         <span class="tif-switch-label">Carry over in-progress issues</span>

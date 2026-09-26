@@ -13,11 +13,12 @@ module GithubIssueOrganizerEngine
       @issues.map do |issue|
         labels = Array(issue["labels"]).map { |label| label.is_a?(Hash) ? label["name"] : label }
         next issue unless issue.fetch("state", "open").casecmp?("open") &&
-          labels.include?("Status: In-progress") &&
           (labels & [ "Status: Blocked", "Status: Review" ]).empty?
 
         repository = issue.fetch("repository_url").split("/").last(2).join("/")
         item = items[[ repository, issue.fetch("number").to_i ]]
+        # The current schedule establishes whether work has already started,
+        # even when the GitHub status label has not been updated.
         next issue unless item && item.starts_on < @starts_on
 
         issue.merge(

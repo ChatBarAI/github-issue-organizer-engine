@@ -16,12 +16,43 @@ module GithubIssueOrganizerEngine
       refute original.key?("carried_starts_on")
     end
 
-    def test_ignores_closed_blocked_review_backlog_unmatched_and_future_issues
+    def test_carries_scheduled_work_regardless_of_github_in_progress_label
+      [nil, "Status: TBD", "Status: Backlog", "Status: In-progress"].each do |status|
+        original = issue.merge("labels" => ["Priority: High", "Effort: 1 day", status].compact)
+        result = Scheduler.new(
+          issues: inherit([original]), starts_on: "2026-09-10", developer_ids: ["bob", "alice"]
+        ).call.scheduled.first
+
+        assert_equal "2026-09-03", result.fetch("starts_on"), status.inspect
+        assert_equal "alice", result.fetch("developer_id"), status.inspect
+        assert_equal "2026-09-10T13:00:00+00:00", result.fetch("work_segments").last.fetch("ends_at"), status.inspect
+      end
+    end
+
+    def test_issue_49_keeps_history_and_developer_with_tbd_status
+      segments = [22, 23, 24, 25, 28].map do |day|
+        {"starts_at" => "2026-09-#{day}T09:00:00+00:00", "ends_at" => "2026-09-#{day}T17:00:00+00:00"}
+      end
+      original = issue.merge("number" => 49, "labels" => ["Status: TBD", "Priority: Medium", "Effort: 5 days"])
+      inherited = TimelineProgressInheritor.new(
+        issues: [original], starts_on: "2026-09-28",
+        timeline: CurrentTimeline.new([Item.new("example/repo", 49, Date.new(2026, 9, 22), "ersad-persada", segments)])
+      ).call
+      result = Scheduler.new(
+        issues: inherited, starts_on: "2026-09-28", developer_ids: ["brodjustice", "ersad-persada"]
+      ).call.scheduled.first
+
+      assert_equal "ersad-persada", result.fetch("developer_id")
+      assert_equal "2026-09-22", result.fetch("starts_on")
+      assert_equal "2026-09-28", result.fetch("ends_on")
+      assert_equal segments, result.fetch("work_segments")
+    end
+
+    def test_ignores_closed_blocked_review_unmatched_and_future_issues
       issues = [
         issue.merge("state" => "closed"),
         issue.merge("labels" => ["Status: In-progress", "Status: Blocked"]),
         issue.merge("labels" => ["Status: In-progress", "Status: Review"]),
-        issue.merge("labels" => ["Status: Backlog"]),
         issue.merge("number" => 2),
         issue.merge("repository_url" => "https://api.github.com/repos/other/repo")
       ]
