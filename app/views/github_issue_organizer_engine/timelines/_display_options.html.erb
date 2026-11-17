@@ -1,0 +1,10 @@
+<div class="tif-timeline-display-options">
+  <% if timeline.items.any? || timeline.milestones.any? %>
+    <label class="tif-switch" title="Make Saturday and Sunday narrower to show more days">
+      <input type="checkbox" role="switch" data-compact-weekends-toggle
+        data-timeline-chart-target="<%= chart_id %>">
+      <span class="tif-switch-control" aria-hidden="true"></span>
+      <span class="tif-switch-label">Compact weekends</span>
+    </label>
+  <% end %>
+</div>

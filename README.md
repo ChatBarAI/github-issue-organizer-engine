@@ -151,6 +151,55 @@ github:
 The callbacks run in the engine controller context, so they can use the host
 application's authentication helpers and current user.
 
+### GitHub token setup: explicitly add Issues permission
+
+**Selecting “All repositories” does not grant permission to read their issues.**
+Repository access selects which repositories the token covers; you must separately
+add **Issues → Read-only** under **Permissions**. GitHub's token form can show
+**“No repository permissions added yet”** even with **All repositories** selected.
+Do not generate the token in that state for this engine.
+
+Create a [fine-grained personal access token](https://github.com/settings/personal-access-tokens/new)
+from your personal GitHub account. For organization repositories, select the
+organization as the resource owner; the organization's token settings page is
+for managing token access, not creating personal tokens.
+
+1. Choose a token name and expiration.
+2. Set **Resource owner** to the repository owner (for example, `ChatBarAI`).
+3. Under **Repository access**, choose **Only select repositories** and select each
+   configured repository, or choose **All repositories** if that scope is intended.
+4. Under **Permissions**, click **Add permissions**.
+5. Select the **Issues** repository permission and set its access to **Read-only**.
+   Before continuing, confirm that **Issues: Read-only** appears in the permissions list.
+6. Click **Generate token**. Obtain organization approval if required; a pending
+   token cannot read private repositories.
+7. Store the generated token in the credential or environment variable used by
+   `config.github_token` in the host application and restart its Rails processes.
+   The example configuration above reads `github.issue_organizer_token` from Rails credentials.
+   If using environment-specific credentials, update the file for the environment
+   running the app, such as `config/credentials/development.yml.enc` or
+   `config/credentials/production.yml.enc`.
+
+GitHub documents the **Issues (read)** requirement for
+[listing repository issues](https://docs.github.com/en/rest/issues/issues#list-repository-issues).
+
+### Private repositories moved to an organization
+
+If timeline generation reports that a repository is unavailable to the configured
+credentials, check both the repository names in **Settings** and the token returned
+by `config.github_token`, including its **Issues: Read-only** permission described above.
+Saved Settings override the initializer's repository list. Being able to open a
+private repository in your browser does not mean the Rails server's token can
+access it. Linking a GitHub username in the organizer does not change that token either.
+
+After a transfer, check that the token's resource owner is the destination
+organization and that its repository access includes the moved repositories.
+
+If using a classic personal access token, check its `repo` scope and the organization's
+token policy; authorize it for the organization's SSO if applicable. See GitHub's
+[token configuration guide](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens)
+and [SSO authorization guide](https://docs.github.com/en/enterprise-cloud@latest/authentication/authenticating-with-single-sign-on/authorizing-a-personal-access-token-for-use-with-single-sign-on).
+
 The engine uses the host application's Rails process, routes, database, and
 asset pipeline. It does not require a separate web service or container.
 
@@ -195,3 +244,45 @@ bundle exec rake test
 ## License
 
 Available under the MIT License.
+
+### Timeline milestones
+
+Click **Milestones** to the right of **Edit** in the timeline’s top navigation
+(or in the editor’s top navigation). Select milestones from the configured repositories in the dialog and save. Open and closed milestones are grouped by repository; milestones without due dates are excluded, as explained in the info tooltip. Selected dates
+extend the chart as needed, with linked labels and dashed vertical markers, including
+in compact weekend mode. Milestones due more than one calendar month before that
+timeline’s start are excluded from the dialog and chart. Markers do not affect
+scheduling or developer capacity.
+
+Milestones with exactly the same title and due date are grouped into one switch
+and chart label, with links to each repository milestone. Selecting a group saves
+all its members; matching titles with different dates remain separate.
+
+Milestone labels and date markers are green when every linked issue is closed on
+time or scheduled to finish by the due date, red if any issue finishes late (or is
+still open after the due date), and amber when a finish date or issue data is missing.
+Open issues still open after their planned finish are also amber. Empty milestones
+are amber. Grouped milestones include all member repositories, and red takes priority
+over amber. Click a milestone label for a details dialog with issue counts, late and uncertain
+issues first, finish dates, and links to issues and repository milestones. If several milestones share a date, the
+vertical line uses their worst status while each label keeps its own color.
+
+Saving the Milestones dialog fetches all open and closed issues for the selected
+milestones, excluding pull requests, and saves an issue-status snapshot. Forecasts
+recalculate from the current timeline schedule whenever it is displayed. Save the
+dialog again to refresh GitHub membership and completion states; existing selections
+without an issue snapshot are amber until refreshed. GitHub retrieval failures leave
+the previous selections and snapshot intact. Closed issues are checked against their
+recorded closure dates. A green forecast is based on the schedule and saved GitHub
+state, rather than a guarantee of delivery.
+
+Selections are saved with each timeline and carried into draft copies. Viewing a
+saved timeline does not contact GitHub. Reopen the picker and save to refresh selected
+titles, dates, and status. Saving removes milestones no longer available in the
+configured repositories. The existing token's **Issues: Read-only** permission is
+sufficient. Install the new engine migration in the host application before use:
+
+```sh
+bin/rails railties:install:migrations FROM=github_issue_organizer_engine
+bin/rails db:migrate
+```

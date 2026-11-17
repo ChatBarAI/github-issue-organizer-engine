@@ -363,6 +363,8 @@
   text-align: center;
 }
 
+.tif-milestone-details,
+#tif-milestones-dialog,
 #tif-fill-gaps-dialog,
 #tif-past-days-dialog,
 #tif-timeline-dialog,
@@ -379,6 +381,8 @@
   color: var(--tif-text);
 }
 
+.tif-milestone-details::backdrop,
+#tif-milestones-dialog::backdrop,
 #tif-fill-gaps-dialog::backdrop,
 #tif-past-days-dialog::backdrop,
 #tif-timeline-dialog::backdrop,
@@ -387,6 +391,8 @@
   background: rgba(0, 0, 0, 0.58);
 }
 
+.tif-milestone-details h2,
+#tif-milestones-dialog h2,
 #tif-fill-gaps-dialog h2,
 #tif-past-days-dialog h2,
 #tif-timeline-dialog h2,
@@ -2100,4 +2106,286 @@
 .tif-timeline-chart-view.is-compact-weekends .tif-timeline-tick.is-weekend .tif-date-action::after {
   content: attr(data-compact-label);
   font-size: 0.7rem;
+}
+
+#tif-milestones-form {
+  padding-top: 20px;
+}
+
+.github-issue-organizer-engine .tif-milestone-picker {
+  margin: 0 0 24px;
+}
+
+.github-issue-organizer-engine .tif-milestone-picker:last-child {
+  margin-bottom: 0;
+}
+
+.github-issue-organizer-engine .tif-milestone-picker > legend {
+  margin: 0;
+  padding: 0 0 12px;
+}
+
+.tif-milestone-picker > .tif-milestone-choice:first-of-type {
+  margin-top: 0;
+}
+
+.tif-milestone-picker > .tif-milestone-choice:last-child {
+  margin-bottom: 0;
+}
+
+.tif-milestone-choice {
+  display: grid;
+  gap: 4px;
+  margin: 16px 0;
+}
+
+.tif-milestone-choice > .tif-switch {
+  min-width: 0;
+}
+
+.tif-milestone-choice > .tif-switch .tif-switch-label {
+  overflow-wrap: anywhere;
+}
+
+.tif-milestone-choice > .tif-milestone-sources {
+  margin-left: 50px;
+}
+
+.tif-milestone-choice > .tif-milestone-sources a {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px;
+  border: 1px solid var(--tif-border);
+  border-radius: 5px;
+  color: var(--tif-muted);
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+
+.tif-milestone-choice > .tif-milestone-sources a:hover,
+.tif-milestone-choice > .tif-milestone-sources a:focus-visible {
+  color: var(--tif-accent);
+  border-color: var(--tif-accent);
+}
+
+.tif-milestone-axis {
+  align-items: stretch;
+}
+
+.tif-milestone-label {
+  min-width: 0;
+  padding: 8px 4px;
+  border-left: 2px dashed var(--tif-accent);
+}
+
+.github-issue-organizer-engine .tif-milestone-details-trigger {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  max-height: 2.8em;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+
+.tif-milestone-line {
+  border-left: 2px dashed var(--tif-accent);
+  z-index: 2;
+  pointer-events: none;
+}
+
+.tif-timeline-display-options {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-left: auto;
+}
+
+.tif-timeline-display-options .tif-switch-label {
+  white-space: nowrap;
+}
+
+#tif-milestones-dialog {
+  width: min(94vw, 760px);
+}
+
+.tif-milestones-title-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tif-milestones-help {
+  color: var(--tif-muted);
+  cursor: help;
+}
+
+.tif-milestones-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tif-milestone-sources {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  font-size: 0.75rem;
+}
+
+.tif-milestone-group + .tif-milestone-group {
+  margin-top: 4px;
+}
+
+.tif-milestone-label.is-on_track,
+.tif-milestone-line.is-on_track,
+.tif-milestone-group.is-on_track {
+  --tif-milestone-status-color: #15803d;
+}
+
+.tif-milestone-label.is-late,
+.tif-milestone-line.is-late,
+.tif-milestone-group.is-late {
+  --tif-milestone-status-color: #dc2626;
+}
+
+.tif-milestone-label.is-uncertain,
+.tif-milestone-line.is-uncertain,
+.tif-milestone-group.is-uncertain {
+  --tif-milestone-status-color: #a16207;
+}
+
+.tif-milestone-label,
+.tif-milestone-line {
+  border-left-color: var(--tif-milestone-status-color, var(--tif-accent));
+}
+
+.github-issue-organizer-engine .tif-milestone-details-trigger {
+  width: 100%;
+  min-height: 0;
+  height: auto;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--tif-milestone-status-color, var(--tif-accent));
+  text-align: left;
+  cursor: pointer;
+}
+
+.tif-milestone-details-trigger:focus-visible {
+  outline: 2px solid var(--tif-accent);
+  outline-offset: 2px;
+}
+
+
+.tif-milestone-details {
+  width: min(94vw, 1040px);
+  font-size: 0.9rem;
+  text-align: left;
+}
+
+.tif-milestone-details .tif-dialog-header h2 {
+  overflow-wrap: anywhere;
+  font-size: 1.2rem;
+}
+
+.tif-milestone-details-body {
+  padding-top: 20px;
+}
+
+.tif-milestone-details-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.tif-milestone-status {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-weight: 700;
+}
+
+.tif-milestone-status.is-late { color: #991b1b; background: #fee2e2; }
+.tif-milestone-status.is-uncertain { color: #854d0e; background: #fef9c3; }
+.tif-milestone-status.is-on_track { color: #166534; background: #dcfce7; }
+
+.tif-milestone-counts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 20px 0;
+}
+
+.tif-milestone-counts > div {
+  padding: 12px;
+  border: 1px solid var(--tif-border);
+  border-radius: 8px;
+}
+
+.tif-milestone-counts strong,
+.tif-milestone-counts span {
+  display: block;
+}
+
+.tif-milestone-counts strong { font-size: 1.4rem; }
+.tif-milestone-counts span,
+.tif-milestone-issue-reference { color: var(--tif-muted); font-size: 0.78rem; }
+.tif-milestone-issue-reference { display: block; margin-top: 4px; }
+.tif-milestone-issue-section { margin-top: 20px; }
+.tif-milestone-issues-scroll { overflow-x: auto; }
+
+.tif-milestone-issues-table {
+  width: 100%;
+  min-width: 620px;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.tif-milestone-issues-table th,
+.tif-milestone-issues-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--tif-border);
+  text-align: left;
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
+
+.tif-milestone-issues-table th:first-child { width: 34%; }
+.tif-milestone-issues-table th:nth-child(2) { width: 12%; }
+.tif-milestone-issues-table th:nth-child(3) { width: 22%; }
+.tif-milestone-issues-table th:last-child { width: 32%; }
+.tif-milestone-details-notice { padding: 10px; border-left: 3px solid #a16207; }
+
+.tif-milestone-github-links {
+  gap: 6px;
+  margin-left: auto;
+}
+
+.github-issue-organizer-engine .tif-milestone-github-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border: 1px solid var(--tif-accent);
+  border-radius: 5px;
+  color: var(--tif-accent);
+  background: color-mix(in srgb, var(--tif-accent) 5%, var(--tif-panel));
+  font-size: 0.75rem;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+
+.tif-milestone-github-link:hover,
+.tif-milestone-github-link:focus-visible {
+  outline: 2px solid var(--tif-accent);
+  outline-offset: 2px;
 }

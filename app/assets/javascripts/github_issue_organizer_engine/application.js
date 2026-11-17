@@ -1188,7 +1188,67 @@
     inspect(records.length - 1);
   };
 
+  const initializeMilestoneDetails = button => {
+    if (button.dataset.milestoneDetailsInitialized === "true") return;
+    const dialog = document.getElementById(button.dataset.openMilestoneDetails);
+    if (!dialog) return;
+    button.dataset.milestoneDetailsInitialized = "true";
+    button.addEventListener("click", () => dialog.showModal());
+    dialog.querySelector("[data-close-milestone-details]").addEventListener("click", () => dialog.close());
+    dialog.addEventListener("click", event => {
+      if (event.target === dialog) dialog.close();
+    });
+  };
+
+  const initializeMilestonesDialog = button => {
+    if (button.dataset.milestonesInitialized === "true") return;
+    const dialog = document.querySelector("[data-milestones-dialog]");
+    if (!dialog) return;
+    button.dataset.milestonesInitialized = "true";
+    const content = dialog.querySelector("[data-milestones-content]");
+    const retry = dialog.querySelector("[data-retry-milestones]");
+    const save = dialog.querySelector("[data-save-milestones]");
+    let requestVersion = 0;
+    const load = async () => {
+      const version = ++requestVersion;
+      content.textContent = "Loading milestones…";
+      content.setAttribute("aria-busy", "true");
+      retry.hidden = true;
+      save.disabled = true;
+      try {
+        const response = await fetch(button.dataset.milestonesUrl, {
+          headers: { Accept: "text/html" }, credentials: "same-origin", cache: "no-store"
+        });
+        if (!response.ok || response.redirected) throw new Error("Milestones unavailable");
+        const html = await response.text();
+        if (version === requestVersion) {
+          content.innerHTML = html;
+          save.disabled = false;
+        }
+      } catch (_error) {
+        if (version === requestVersion) {
+          content.textContent = "Could not load milestones. Please try again.";
+          retry.hidden = false;
+        }
+      } finally {
+        if (version === requestVersion) content.removeAttribute("aria-busy");
+      }
+    };
+    button.addEventListener("click", () => {
+      dialog.showModal();
+      load();
+    });
+    retry.addEventListener("click", load);
+    dialog.querySelector("[data-close-milestones]").addEventListener("click", () => dialog.close());
+    dialog.addEventListener("click", event => {
+      if (event.target === dialog) dialog.close();
+    });
+    dialog.addEventListener("close", () => { requestVersion += 1; });
+  };
+
   const initializeAll = () => {
+    document.querySelectorAll("[data-open-milestone-details]").forEach(initializeMilestoneDetails);
+    document.querySelectorAll("[data-open-milestones]").forEach(initializeMilestonesDialog);
     document.querySelectorAll("[data-issue-history]").forEach(initializeIssueHistory);
     initializeCompactWeekendToggles();
     initializeTimelineScroll();
@@ -1204,6 +1264,11 @@
     document.querySelectorAll("[data-timeline-chart-view]").forEach(view => {
       delete view.dataset.scrollInitialized;
     });
+    document.querySelectorAll("[data-milestone-details-dialog][open]").forEach(dialog => dialog.close());
+    document.querySelectorAll("[data-open-milestone-details]").forEach(button => {
+      delete button.dataset.milestoneDetailsInitialized;
+    });
+    document.querySelector("#tif-milestones-dialog[open]")?.close();
     document.querySelector("#tif-past-days-dialog[open]")?.close();
     document.querySelector("#tif-fill-gaps-dialog[open]")?.close();
     document.querySelectorAll("[data-issue-history]").forEach(root => {

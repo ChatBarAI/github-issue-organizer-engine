@@ -1,10 +1,20 @@
 require "test_helper"
+require_relative "../../../app/services/github_issue_organizer_engine/milestone_window"
 require_relative "../../../app/helpers/github_issue_organizer_engine/timelines_helper"
 require_relative "../../../app/services/github_issue_organizer_engine/issue_priority_counts"
 
 module GithubIssueOrganizerEngine
   class TimelinesHelperTest < Minitest::Test
     include TimelinesHelper
+
+    def test_milestone_labels_use_free_columns_without_covering_the_next_milestone
+      date = Date.new(2026, 11, 20)
+      assert_equal 4, timeline_milestone_column_span(date, [date, date + 7], date + 10)
+      assert_equal 2, timeline_milestone_column_span(date, [date + 2, date], date + 10)
+      assert_equal 1, timeline_milestone_column_span(date, [date, date + 1], date + 10)
+      assert_equal 1, timeline_milestone_column_span(date, [date], date)
+      assert_equal 3, timeline_milestone_column_span(date, [date], date + 2)
+    end
 
     def test_past_display_range_stays_fixed_after_moving_an_issue_into_it
       start = Date.new(2026, 9, 10)
@@ -19,7 +29,7 @@ module GithubIssueOrganizerEngine
 
     def test_unavailability_visibility_uses_the_displayed_date_range
       item = Struct.new(:starts_on, :ends_on).new(Date.new(2026, 9, 10), Date.new(2026, 9, 15))
-      timeline = Struct.new(:starts_on, :items).new(item.starts_on, [item])
+      timeline = Struct.new(:starts_on, :items, :milestones).new(item.starts_on, [item], [])
       period_class = Struct.new(:starts_at, :ends_at)
       Time.use_zone("UTC") do
         earlier = period_class.new(Time.zone.parse("2026-09-08 09:00"), Time.zone.parse("2026-09-08 17:00"))
@@ -31,6 +41,19 @@ module GithubIssueOrganizerEngine
         refute unavailability_in_displayed_timeline?(boundary, timeline)
         later = period_class.new(Time.zone.parse("2026-09-16 00:00"), Time.zone.parse("2026-09-16 17:00"))
         refute unavailability_in_displayed_timeline?(later, timeline)
+      end
+    end
+
+    def test_milestone_dates_extend_chart_range_without_changing_scheduled_dates
+      item = Struct.new(:starts_on, :ends_on).new(Date.new(2026, 11, 17), Date.new(2026, 11, 19))
+      timeline = Struct.new(:starts_on, :items, :milestones).new(item.starts_on, [item], [
+        { "due_on" => "2026-11-15" }, { "due_on" => "2026-11-21" }, { "due_on" => nil }
+      ])
+      assert_equal Date.new(2026, 11, 15)..Date.new(2026, 11, 21), timeline_chart_date_range(timeline)
+      assert_equal Date.new(2026, 11, 19), item.ends_on
+      period = Struct.new(:starts_at, :ends_at).new(Time.utc(2026, 11, 20, 9), Time.utc(2026, 11, 20, 17))
+      Time.use_zone("UTC") do
+        assert unavailability_in_displayed_timeline?(period, timeline)
       end
     end
 

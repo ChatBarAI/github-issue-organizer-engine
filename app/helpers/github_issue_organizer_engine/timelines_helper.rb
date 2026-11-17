@@ -1,15 +1,49 @@
 module GithubIssueOrganizerEngine
   module TimelinesHelper
+    def milestone_forecast(milestones, timeline)
+      MilestoneForecast.new(items: timeline.items.to_a).call(milestones)
+    end
+
+    def milestone_issue_details(milestones, timeline)
+      MilestoneForecast.new(items: timeline.items.to_a).issue_details(milestones)
+    end
+
+    def milestone_groups(milestones)
+      MilestoneGroups.call(milestones)
+    end
+
+    def timeline_milestone_column_span(date, milestone_dates, last_date)
+      next_milestone = milestone_dates.select { |other_date| other_date > date }.min
+      end_date = [date + 4, next_milestone, last_date + 1].compact.min
+      (end_date - date).to_i
+    end
+
     def timeline_chart_first_date(starts_on, items, past_days: 0)
       [starts_on - past_days.to_i.clamp(0, 365), items.map(&:starts_on).min].compact.min
     end
 
+    def timeline_displayed_milestones(timeline)
+      MilestoneWindow.call(timeline.milestones, starts_on: timeline.starts_on)
+        .select { |milestone| milestone["due_on"].present? }
+    end
+
+    def timeline_chart_date_range(timeline, past_days: 0)
+      items = timeline.items.to_a
+      milestone_dates = timeline_displayed_milestones(timeline).filter_map do |milestone|
+        Date.iso8601(milestone.fetch("due_on")) if milestone["due_on"].present?
+      end
+      first_date = [timeline_chart_first_date(timeline.starts_on, items, past_days: past_days), *milestone_dates].min
+      last_date = [timeline.starts_on, *items.map(&:ends_on), *milestone_dates].compact.max
+      first_date..last_date
+    end
+
     def unavailability_in_displayed_timeline?(period, timeline, past_days: 0)
       items = timeline.items.to_a
-      return false if items.empty?
+      return false if items.empty? && timeline_displayed_milestones(timeline).empty?
 
-      first_date = timeline_chart_first_date(timeline.starts_on, items, past_days: past_days)
-      last_date = items.map(&:ends_on).max
+      range = timeline_chart_date_range(timeline, past_days: past_days)
+      first_date = range.begin
+      last_date = range.end
       period.starts_at.in_time_zone.to_date <= last_date &&
         period.ends_at.in_time_zone > first_date.in_time_zone
     end

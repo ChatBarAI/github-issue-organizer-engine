@@ -1,0 +1,15 @@
+<dialog id="tif-milestones-dialog" aria-labelledby="tif-milestones-title" data-milestones-dialog>
+  <div class="tif-dialog-header">
+    <div class="tif-milestones-title-group">
+      <h2 id="tif-milestones-title">Milestones</h2>
+      <span class="tif-milestones-help"
+        title="Select milestones to display at their due dates. Milestones due before <%= l @timeline.starts_on.prev_month, format: :long %> are excluded. Milestones without due dates are also excluded. Green: all issues completed or scheduled on time. Red: at least one issue late. Amber: missing schedule or issue data. Save to refresh GitHub issue status.">ⓘ</span>
+    </div>
+    <div class="tif-milestones-header-actions">
+      <button type="submit" form="tif-milestones-form" class="tif-primary" data-save-milestones disabled>Save</button>
+      <button type="button" class="tif-dialog-close" data-close-milestones aria-label="Close dialog">×</button>
+    </div>
+  </div>
+  <div data-milestones-content aria-live="polite"></div>
+  <button type="button" class="tif-account-link" data-retry-milestones hidden>Retry</button>
+</dialog>

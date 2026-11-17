@@ -21,7 +21,7 @@ class HostRouteHelpersTest < ActionDispatch::IntegrationTest
       starts_on: Date.current, ends_on: Date.current, developer_ids: [ "dev" ],
       created_by: nil, created_by_id: 1, created_at: Time.current,
       original_created_at: Time.current, edited_by_id: nil, source_timeline_id: nil,
-      items: [], in_review_issues: [], blocked_issues: [], needs_effort_issues: []
+      items: [], milestones: [], in_review_issues: [], blocked_issues: [], needs_effort_issues: []
     }.each { |name, value| timeline.define_singleton_method(name) { value } }
 
     with_current_timeline(timeline) { get "/admin/github-issues" }

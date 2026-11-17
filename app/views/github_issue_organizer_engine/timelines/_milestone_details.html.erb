@@ -1,0 +1,84 @@
+<% milestone = group.first %>
+<% issues = milestone_issue_details(group, timeline) %>
+<% checked_at = group.filter_map { |member| member["issues_checked_at"] }.min %>
+<dialog id="<%= dialog_id %>" class="tif-milestone-details" aria-labelledby="<%= dialog_id %>-title" data-milestone-details-dialog>
+  <div class="tif-dialog-header">
+    <h2 id="<%= dialog_id %>-title"><%= milestone.fetch("title") %></h2>
+    <button type="button" class="tif-dialog-close" data-close-milestone-details aria-label="Close milestone details" autofocus>×</button>
+  </div>
+  <div class="tif-milestone-details-body">
+    <div class="tif-milestone-details-summary">
+      <span class="tif-milestone-status is-<%= forecast.status %>"><%= forecast.label %></span>
+      <span>Due <strong><%= l Date.iso8601(milestone.fetch("due_on")), format: :long %></strong></span>
+      <nav class="tif-milestone-sources tif-milestone-github-links" aria-label="Milestones on GitHub">
+        <% group.each do |member| %>
+          <% repository = member.fetch("repository") %>
+          <% short_name = repository.split("/").last %>
+          <% link_label = group.count { |source| source.fetch("repository").split("/").last == short_name } > 1 ? repository : short_name %>
+          <%= link_to member.fetch("url"), class: "tif-milestone-github-link", target: "_blank", rel: "noopener noreferrer",
+            title: "Open #{repository} milestone on GitHub", aria: { label: "Open #{repository} milestone on GitHub" } do %>
+            <%= link_label %> <span aria-hidden="true">↗</span>
+          <% end %>
+        <% end %>
+      </nav>
+    </div>
+
+    <p class="tif-help">
+      <% if checked_at %>
+        GitHub issues checked <%= l Time.iso8601(checked_at).in_time_zone, format: :long %>.
+      <% else %>
+        GitHub issue status has not been checked.
+      <% end %>
+      Save in the Milestones dialog to refresh issue data. Finish dates reflect this timeline’s schedule.
+    </p>
+    <% group.reject { |member| member.key?("issues") }.each do |member| %>
+      <p class="tif-milestone-details-notice">Issue data is missing for <%= member.fetch("repository") %>.</p>
+    <% end %>
+    <% if issues.empty? %>
+      <p><%= forecast.detail %></p>
+    <% else %>
+      <div class="tif-milestone-counts" aria-label="Issue forecast counts">
+        <% [[:late, "Late"], [:uncertain, "Needs attention"], [:on_track, "On time"]].each do |status, label| %>
+          <div><strong><%= issues.count { |issue| issue.forecast.status == status } %></strong><span><%= label %></span></div>
+        <% end %>
+      </div>
+      <% [[:late, "Late issues"], [:uncertain, "Needs attention"], [:on_track, "On time"]].each do |status, heading| %>
+        <% matching = issues.select { |issue| issue.forecast.status == status } %>
+        <% next if matching.empty? %>
+        <section class="tif-milestone-issue-section">
+          <h3><%= heading %> (<%= matching.size %>)</h3>
+          <div class="tif-milestone-issues-scroll" tabindex="0" role="region" aria-label="<%= heading %>">
+            <table class="tif-milestone-issues-table">
+              <thead><tr><th scope="col">Issue</th><th scope="col">State</th><th scope="col">Finish date</th><th scope="col">Assessment</th></tr></thead>
+              <tbody>
+                <% matching.each do |issue| %>
+                  <tr>
+                    <td>
+                      <%= link_to issue.title, "https://github.com/#{issue.repository}/issues/#{issue.number}", target: "_blank", rel: "noopener noreferrer" %>
+                      <span class="tif-milestone-issue-reference"><%= issue.repository %>#<%= issue.number %></span>
+                    </td>
+                    <td><%= issue.state.capitalize %></td>
+                    <td>
+                      <% if issue.state == "closed" %>
+                        <%= issue.closed_on ? "Closed #{l issue.closed_on, format: :long}" : "Unknown" %>
+                      <% else %>
+                        <%= issue.ends_on ? "Planned #{l issue.ends_on, format: :long}" : "Not scheduled" %>
+                      <% end %>
+                    </td>
+                    <td>
+                      <% if issue.forecast.status == :on_track %>
+                        <%= issue.state == "closed" ? "Completed by the due date" : "Scheduled by the due date" %>
+                      <% else %>
+                        <%= issue.forecast.detail.delete_prefix("#{issue.repository}##{issue.number}: ") %>
+                      <% end %>
+                    </td>
+                  </tr>
+                <% end %>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      <% end %>
+    <% end %>
+  </div>
+</dialog>

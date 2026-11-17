@@ -1,7 +1,7 @@
 module GithubIssueOrganizerEngine
   class TimelineCopy
     TIMELINE_ATTRIBUTES = %w[
-      starts_on query developer_count developer_ids in_review_issues blocked_issues needs_effort_issues
+      starts_on query developer_count developer_ids in_review_issues blocked_issues needs_effort_issues milestones
     ].freeze
     CHILD_IGNORED_ATTRIBUTES = %w[id timeline_id created_at updated_at].freeze
 

@@ -18,16 +18,7 @@
         · Drag issues to reorder a developer's work or move it directly to another developer.
         Reordering preserves past work and moves the remaining hours; drop before an in-progress issue to interrupt it.
       </p>
-      <% if @timeline.items.any? %>
-        <label class="tif-switch" title="Make Saturday and Sunday narrower to show more days">
-          <input type="checkbox"
-            role="switch"
-            data-compact-weekends-toggle
-            data-timeline-chart-target="tif-updated-schedule-chart">
-          <span class="tif-switch-control" aria-hidden="true"></span>
-          <span class="tif-switch-label">Compact weekends</span>
-        </label>
-      <% end %>
+      <%= render "display_options", timeline: @timeline, chart_id: "tif-updated-schedule-chart" %>
     </div>
     <nav class="tif-heading-links" aria-label="Timeline navigation">
       <% if @timeline.draft? %>
@@ -38,6 +29,7 @@
           form: { data: { turbo_confirm: "Set this draft as the current timeline? The existing current timeline will become obsolete." } } %>
       <% end %>
       <%= link_to "View timeline", timeline_path(@timeline), class: "tif-account-link" %>
+      <%= render "milestones_button", timeline: @timeline, return_view: "edit" %>
       <%= link_to "All timelines", timelines_path, class: "tif-account-link" %>
     </nav>
   </header>
@@ -128,4 +120,5 @@
 
   <%= render "add_unavailability_dialog", timeline: @timeline, unavailability: @unavailability %>
   <%= render "unavailability_dialog", timeline: @timeline %>
+  <%= render "milestones_dialog" %>
 </div>

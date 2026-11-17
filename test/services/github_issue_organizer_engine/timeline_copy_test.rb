@@ -55,6 +55,7 @@ module GithubIssueOrganizerEngine
           "in_review_issues" => [],
           "blocked_issues" => [],
           "needs_effort_issues" => [ { "title" => "Needs sizing" } ],
+          "milestones" => [{ "id" => "123", "title" => "Release", "due_on" => "2026-10-01" }],
           "status" => "current"
         },
         items: FakeAssociation.new([
@@ -72,6 +73,7 @@ module GithubIssueOrganizerEngine
       assert_equal 12, FakeTimelineClass.created_attributes.fetch("source_timeline_id")
       assert_equal "draft", FakeTimelineClass.created_attributes.fetch("status")
       assert_equal [ { "title" => "Needs sizing" } ], FakeTimelineClass.created_attributes.fetch("needs_effort_issues")
+      assert_equal source.attributes.fetch("milestones"), FakeTimelineClass.created_attributes.fetch("milestones")
       assert_equal({ "position" => 1, "title" => "Issue" }, copy.items.created_attributes.sole)
       assert_equal({ "developer_id" => "developer-a", "reason" => "Holiday" }, copy.unavailabilities.created_attributes.sole)
     end

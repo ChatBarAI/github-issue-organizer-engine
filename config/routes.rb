@@ -16,6 +16,8 @@ GithubIssueOrganizerEngine::Engine.routes.draw do
     post :edit_copy, on: :member
     patch :make_current, on: :member
     patch :fill_gaps, on: :member
+    get :milestones, on: :member
+    patch :update_milestones, on: :member
     resources :items, only: [ :update, :destroy ], controller: "timeline_items"
     resources :unavailabilities,
       only: [ :create, :update, :destroy ],

@@ -1,4 +1,5 @@
 require "cgi"
+require "date"
 require "json"
 require "net/http"
 require "timeout"
@@ -66,6 +67,61 @@ module GithubIssueOrganizerEngine
         end.uniq { |issue| issue.fetch("id") }
       end
 
+      def milestone_issues(repository:, milestone_number:)
+        raise ArgumentError, "Unknown milestone repository" unless @repositories.include?(repository)
+
+        issues = []
+        page = 1
+        loop do
+          items = request_json("/repos/#{repository}/issues",
+            milestone: milestone_number, state: "all", sort: "created", direction: "asc", per_page: PER_PAGE, page: page)
+          raise Error, "GitHub returned an invalid issue list" unless items.is_a?(Array)
+
+          issues.concat(items.reject { |item| item.key?("pull_request") }.map do |item|
+            {
+              "number" => item.fetch("number"),
+              "title" => item.fetch("title", "Issue ##{item.fetch('number')}"),
+              "state" => item.fetch("state"),
+              "closed_on" => item["closed_at"] && Date.iso8601(item["closed_at"]).iso8601
+            }
+          end)
+          break if items.size < PER_PAGE
+
+          page += 1
+        end
+        issues.uniq { |issue| issue.fetch("number") }
+      end
+
+      def milestones
+        raise ArgumentError, "Configure at least one repository in Settings" if @repositories.empty?
+
+        @repositories.flat_map do |repository|
+          milestones = []
+          page = 1
+          loop do
+            items = request_json("/repos/#{repository}/milestones",
+              state: "all", sort: "due_on", direction: "asc", per_page: PER_PAGE, page: page)
+            raise Error, "GitHub returned an invalid milestone list" unless items.is_a?(Array)
+
+            milestones.concat(items.map do |item|
+              {
+                "id" => item.fetch("id").to_s,
+                "repository" => repository,
+                "number" => item.fetch("number"),
+                "title" => item.fetch("title"),
+                "state" => item.fetch("state"),
+                "due_on" => item["due_on"] && Date.iso8601(item["due_on"]).iso8601,
+                "url" => "https://github.com/#{repository}/milestone/#{item.fetch('number')}"
+              }
+            end)
+            break if items.size < PER_PAGE
+
+            page += 1
+          end
+          milestones
+        end
+      end
+
       private
 
       def search_repository(query, repository)
@@ -124,7 +180,12 @@ module GithubIssueOrganizerEngine
         when Net::HTTPForbidden
           raise RateLimitError, "GitHub denied the request or the API rate limit was reached"
         when Net::HTTPNotFound, Net::HTTPUnprocessableEntity
-          raise RepositoryAccessError, "the repository is unavailable to the configured credentials"
+          raise RepositoryAccessError,
+            "the repository is unavailable to the configured credentials. " \
+            "Check its owner/repository name in Settings and the host application's GitHub token. " \
+            "For private repositories moved to an organization, a fine-grained token must use " \
+            "that organization as its resource owner, include the repositories, and have Issues read access " \
+            "with any required organization approval. Your browser's GitHub access does not grant the server token access."
         else
           raise Error, "GitHub API request failed with HTTP #{response.code}"
         end

@@ -1,0 +1,41 @@
+<% selected_ids = GithubIssueOrganizerEngine::MilestoneWindow.call(@timeline.milestones, starts_on: @timeline.starts_on).map { |milestone| milestone.fetch("id") } %>
+<% if (selected_ids - @available_milestones.map { |milestone| milestone.fetch("id") }).any? %>
+  <p role="status">Some saved milestones are no longer available in the configured repositories. Saving will remove those markers.</p>
+<% end %>
+<%= form_with url: update_milestones_timeline_path(@timeline), method: :patch, local: true, id: "tif-milestones-form", data: { turbo: false } do %>
+  <%= hidden_field_tag "milestone_ids[]", "" %>
+  <%= hidden_field_tag :return_view, params[:return_view] %>
+  <% if @available_milestones.empty? %>
+    <p>No milestones with due dates in the display window were found in the configured repositories.</p>
+  <% end %>
+  <% milestone_groups(@available_milestones).group_by { |group| group.map { |milestone| milestone.fetch("repository") }.uniq }.each do |repositories, groups| %>
+    <fieldset class="tif-milestone-picker">
+      <legend><%= repositories.join(" · ") %></legend>
+      <% groups.each do |group| %>
+        <% milestone = group.first %>
+        <div class="tif-milestone-choice">
+          <%= label_tag "milestone-#{milestone.fetch('id')}", class: "tif-switch" do %>
+            <%= check_box_tag "milestone_ids[]", milestone.fetch("id"), group.any? { |member| selected_ids.include?(member.fetch("id")) },
+              id: "milestone-#{milestone.fetch('id')}", role: "switch" %>
+            <span class="tif-switch-control" aria-hidden="true"></span>
+            <span class="tif-switch-label">
+              <%= milestone.fetch("title") %> · <%= group.map { |member| member.fetch("state") }.uniq.join(" / ") %> ·
+              <%= l Date.iso8601(milestone.fetch("due_on")), format: :long %>
+            </span>
+          <% end %>
+          <span class="tif-milestone-sources">
+            <% group.each do |member| %>
+              <% repository = member.fetch("repository") %>
+              <% short_name = repository.split("/").last %>
+              <% link_label = group.count { |source| source.fetch("repository").split("/").last == short_name } > 1 ? repository : short_name %>
+              <%= link_to member.fetch("url"), target: "_blank", rel: "noopener noreferrer",
+                title: "Open #{repository} milestone on GitHub", aria: { label: "Open #{repository} milestone on GitHub" } do %>
+                <%= link_label %> <span aria-hidden="true">↗</span>
+              <% end %>
+            <% end %>
+          </span>
+        </div>
+      <% end %>
+    </fieldset>
+  <% end %>
+<% end %>

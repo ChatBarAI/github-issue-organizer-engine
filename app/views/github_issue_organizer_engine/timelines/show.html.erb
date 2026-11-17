@@ -7,7 +7,7 @@
       <p>
         <span class="tif-timeline-status is-<%= @timeline.status %>"><%= timeline_status_label(@timeline) %></span> ·
         Starts <%= l @timeline.starts_on, format: :long %> ·
-        Ends <%= l @timeline.ends_on, format: :long %> ·
+        <% if @timeline.ends_on %>Ends <%= l @timeline.ends_on, format: :long %> ·<% end %>
         <%= pluralize @timeline.developer_ids.size, "developer" %> ·
         created by <%= timeline_user_name(@timeline.created_by, @timeline.created_by_id) %>
         on <%= l @timeline.original_created_at, format: :long %>
@@ -20,16 +20,7 @@
         <% end %>
         · <%= time_ago_in_words(@timeline.created_at) %> ago
       </p>
-      <% if @timeline.items.any? %>
-        <label class="tif-switch" title="Make Saturday and Sunday narrower to show more days">
-          <input type="checkbox"
-            role="switch"
-            data-compact-weekends-toggle
-            data-timeline-chart-target="tif-timeline-chart">
-          <span class="tif-switch-control" aria-hidden="true"></span>
-          <span class="tif-switch-label">Compact weekends</span>
-        </label>
-      <% end %>
+      <%= render "display_options", timeline: @timeline, chart_id: "tif-timeline-chart" %>
     </div>
     <nav class="tif-heading-links" aria-label="Timeline navigation">
       <% if @timeline.draft? %>
@@ -44,6 +35,7 @@
         method: :post,
         class: "tif-account-link",
         form: { data: { turbo_confirm: "Create a new draft copy to edit?" } } %>
+      <%= render "milestones_button", timeline: @timeline, return_view: "show" %>
       <%= link_to "All timelines", timelines_path, class: "tif-account-link" %>
       <%= link_to "Organizer", issues_path, class: "tif-account-link" %>
     </nav>
@@ -119,4 +111,5 @@
   </section>
 
   <%= render "informational_issues", timeline: @timeline %>
+  <%= render "milestones_dialog" %>
 </div>

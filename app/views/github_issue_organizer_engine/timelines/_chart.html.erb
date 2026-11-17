@@ -1,5 +1,7 @@
 <% chart_items = timeline.items.to_a %>
-<% if chart_items.any? %>
+<% chart_milestones = timeline_displayed_milestones(timeline)
+  .group_by { |milestone| Date.iso8601(milestone.fetch("due_on")) } %>
+<% if chart_items.any? || chart_milestones.any? %>
   <% missing_history = chart_items.select do |item|
     item.starts_on < timeline.starts_on &&
       (item.work_segments.blank? || DateTime.iso8601(item.work_segments.first.fetch("starts_at")).to_date > item.starts_on)
@@ -7,10 +9,10 @@
   <% if missing_history.any? %>
     <p role="status">Historical work is missing for <%= missing_history.map { |item| "#{item.repository} ##{item.issue_number}" }.join(", ") %>. Restore recorded work before rescheduling; earlier start dates alone do not establish hours worked.</p>
   <% end %>
-  <% first_date = timeline_chart_first_date(timeline.starts_on, chart_items,
+  <% date_range = timeline_chart_date_range(timeline,
     past_days: local_assigns[:editable_issues] ? local_assigns[:extra_past_days] : 0) %>
-  <% last_date = chart_items.map(&:ends_on).max %>
-  <% dates = (first_date..last_date).to_a %>
+  <% first_date = date_range.begin %>
+  <% dates = date_range.to_a %>
   <% weekend_day_indexes = dates.each_index.select { |index| dates[index].saturday? || dates[index].sunday? } %>
   <% compact_day_columns = dates.map { |date| date.saturday? || date.sunday? ? "32px" : "112px" }.join(" ") %>
   <% compact_slot_columns = dates.map { |date| "repeat(8, #{date.saturday? || date.sunday? ? 4 : 14}px)" }.join(" ") %>
@@ -62,6 +64,30 @@
         <% end %>
       </div>
 
+      <% if chart_milestones.any? %>
+        <div class="tif-timeline-corner">Milestones</div>
+        <div class="tif-timeline-axis tif-milestone-axis">
+          <% chart_milestones.each do |date, milestones| %>
+            <% column_span = timeline_milestone_column_span(date, chart_milestones.keys, date_range.end) %>
+            <% date_forecast = milestone_forecast(milestones, timeline) %>
+            <div class="tif-milestone-label is-<%= date_forecast.status %>" style="grid-column: <%= (date - first_date).to_i + 1 %> / span <%= column_span %>; grid-row: 1">
+              <% milestone_groups(milestones).each do |group| %>
+                <% milestone = group.first %>
+                <% forecast = milestone_forecast(group, timeline) %>
+                <div class="tif-milestone-group is-<%= forecast.status %>">
+                  <% dialog_id = "tif-milestone-details-#{timeline.id}-#{milestone.fetch('id')}" %>
+                  <%= button_tag "◆ #{milestone.fetch('title')}", type: "button", class: "tif-milestone-details-trigger",
+                    title: "View milestone details",
+                    aria: { label: "#{milestone.fetch('title')}: #{forecast.label}", haspopup: "dialog", controls: dialog_id },
+                    data: { open_milestone_details: dialog_id } %>
+                  <%= render "github_issue_organizer_engine/timelines/milestone_details", group: group,
+                    timeline: timeline, forecast: forecast, dialog_id: dialog_id %>
+                </div>
+              <% end %>
+            </div>
+          <% end %>
+        </div>
+      <% end %>
       <% timeline.developer_ids.each do |developer_id| %>
         <% developer_items = chart_items.select { |item| item.developer_id == developer_id }
           .sort_by { |item| [ item.starts_on, item.position ] } %>
@@ -148,6 +174,10 @@
                   period.reason.presence
                 ].compact.join(" · ") %>
             <% end %>
+          <% end %>
+          <% chart_milestones.each do |date, milestones| %>
+            <span class="tif-milestone-line is-<%= milestone_forecast(milestones, timeline).status %>" aria-hidden="true"
+              style="grid-column: <%= (date - first_date).to_i * 8 + 1 %> / span 8; grid-row: 1"></span>
           <% end %>
           <% placements.each do |item, segment| %>
             <% segment_start = Time.zone.parse(segment.fetch("starts_at")) %>
