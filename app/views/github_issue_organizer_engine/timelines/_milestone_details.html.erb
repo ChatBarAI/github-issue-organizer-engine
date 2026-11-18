@@ -1,5 +1,6 @@
 <% milestone = group.first %>
 <% issues = milestone_issue_details(group, timeline) %>
+<% scheduled_items = timeline.items.to_a.index_by { |item| [item.repository.downcase, item.issue_number.to_i] } %>
 <% checked_at = group.filter_map { |member| member["issues_checked_at"] }.min %>
 <dialog id="<%= dialog_id %>" class="tif-milestone-details" aria-labelledby="<%= dialog_id %>-title" data-milestone-details-dialog>
   <div class="tif-dialog-header">
@@ -70,6 +71,11 @@
                         <%= issue.state == "closed" ? "Completed by the due date" : "Scheduled by the due date" %>
                       <% else %>
                         <%= issue.forecast.detail.delete_prefix("#{issue.repository}##{issue.number}: ") %>
+                      <% end %>
+                      <% if (item = scheduled_items[[issue.repository.downcase, issue.number.to_i]]) %>
+                        <button type="button" class="tif-milestone-show-issue"
+                          data-reveal-timeline-issue="<%= item.id %>"
+                          aria-label="Show <%= issue.repository %>#<%= issue.number %> in Timeline">Show in Timeline</button>
                       <% end %>
                     </td>
                   </tr>

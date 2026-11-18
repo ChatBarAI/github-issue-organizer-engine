@@ -240,6 +240,31 @@ class TimelineMilestonesTest < ActionDispatch::IntegrationTest
     assert_select ".tif-milestone-line.is-on_track", count: 1
   end
 
+  test "milestone issue navigation matches repository and number and excludes unscheduled issues" do
+    item = Struct.new(:id, :repository, :issue_number, :title, :ends_on)
+      .new(99, "Example/One", 7, "Scheduled issue", Date.new(2026, 11, 20))
+    timeline = Struct.new(:items).new([item])
+    group = [
+      @milestone.merge("issues" => [
+        { "number" => 7, "title" => "Scheduled issue", "state" => "open" },
+        { "number" => 8, "title" => "Unscheduled issue", "state" => "open" }
+      ]),
+      @milestone.merge("id" => "201", "repository" => "example/two", "issues" => [
+        { "number" => 7, "title" => "Same number in another repository", "state" => "open" }
+      ])
+    ]
+    html = GithubIssueOrganizerEngine::TimelinesController.render(
+      partial: "github_issue_organizer_engine/timelines/milestone_details",
+      locals: { group: group, timeline: timeline, dialog_id: "milestone-navigation",
+        forecast: GithubIssueOrganizerEngine::MilestoneForecast.new(items: [item]).call(group) }
+    )
+    actions = Nokogiri::HTML.fragment(html).css("button[data-reveal-timeline-issue]")
+    assert_equal 1, actions.size
+    assert_equal "99", actions.first["data-reveal-timeline-issue"]
+    assert_equal "Show example/one#7 in Timeline", actions.first["aria-label"]
+    assert_equal "Show in Timeline", actions.first.text
+  end
+
   private
 
   def with_timeline

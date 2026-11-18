@@ -683,31 +683,133 @@
     filter();
   };
 
+  const initializeStickyTimeline = root => {
+    const panel = root.querySelector(".tif-timeline-browser > .tif-timeline-chart-panel");
+    if (!panel) return;
+
+    const controller = new AbortController();
+    let frame;
+    const update = () => {
+      frame = null;
+      const sticky = getComputedStyle(panel).position === "sticky";
+      // The panel only needs a separator after moving away from its normal position.
+      panel.classList.toggle("is-stuck", sticky &&
+        panel.getBoundingClientRect().top > panel.parentElement.getBoundingClientRect().top + 1);
+    };
+    const scheduleUpdate = () => {
+      if (frame == null) frame = requestAnimationFrame(update);
+    };
+    window.addEventListener("scroll", scheduleUpdate, { capture: true, passive: true, signal: controller.signal });
+    window.addEventListener("resize", scheduleUpdate, { signal: controller.signal });
+    document.addEventListener("turbo:before-cache", () => {
+      controller.abort();
+      cancelAnimationFrame(frame);
+      panel.classList.remove("is-stuck");
+    }, { once: true });
+    update();
+  };
+
   const initializeTimelineDetails = root => {
     if (root.dataset.timelineDetailsInitialized === "true") return;
     root.dataset.timelineDetailsInitialized = "true";
     initializeIssueSearch(root);
+    initializeStickyTimeline(root);
 
     const chart = root.querySelector(".tif-timeline-chart");
     const tasks = Array.from(root.querySelectorAll("[data-timeline-issue]"));
     const cards = Array.from(root.querySelectorAll("[data-timeline-issue-card]"));
-    if (!chart || !tasks.length || !cards.length) return;
+    if (!chart || !tasks.length) return;
+
+    const scroll = root.querySelector(".tif-timeline-chart-scroll");
+    let revealTimer;
+    let gliding = false;
+    const stopGlide = () => {
+      if (!gliding || !scroll) return;
+      scroll.scrollTo({ left: scroll.scrollLeft, top: scroll.scrollTop, behavior: "instant" });
+      gliding = false;
+    };
+    scroll?.addEventListener("scrollend", () => { gliding = false; });
+    const revealIssue = (issueKey, animate = true) => {
+      if (!scroll || root.dataset.highlightedTimelineIssue !== issueKey) return;
+
+      const bounds = scroll.getBoundingClientRect();
+      const labelWidth = chart.querySelector(".tif-timeline-developer")?.getBoundingClientRect().width || 0;
+      const left = bounds.left + scroll.clientLeft + labelWidth + 12;
+      const right = bounds.left + scroll.clientLeft + scroll.clientWidth - 12;
+      if (right <= left) return;
+
+      const headerHeight = chart.querySelector(".tif-timeline-axis")?.getBoundingClientRect().height || 0;
+      const top = bounds.top + scroll.clientTop + headerHeight + 8;
+      const bottom = bounds.top + scroll.clientTop + scroll.clientHeight - 8;
+      const verticalOverflow = scroll.scrollHeight > scroll.clientHeight && bottom > top;
+      const revealOffset = (start, end, visibleStart, visibleEnd) => {
+        if (start >= visibleStart && end <= visibleEnd) return 0;
+        if (start <= visibleStart && end >= visibleEnd) return 0;
+        if (end - start > visibleEnd - visibleStart || start < visibleStart) return start - visibleStart;
+        return end - visibleEnd;
+      };
+
+      // Reveal the nearest segment, accounting for sticky developer and date labels.
+      const offsets = tasks.filter(task => task.dataset.timelineIssue === issueKey).map(task => {
+        const rect = task.getBoundingClientRect();
+        return {
+          task,
+          left: revealOffset(rect.left, rect.right, left, right),
+          top: verticalOverflow ? revealOffset(rect.top, rect.bottom, top, bottom) : 0
+        };
+      });
+      if (!offsets.length) return;
+      const distance = offset => Math.abs(offset.left) + Math.abs(offset.top);
+      const offset = offsets.reduce((nearest, value) => distance(value) < distance(nearest) ? value : nearest);
+      // Only scroll the chart: moving the page could move the card under the pointer.
+      if (offset.top !== 0) {
+        scroll.scrollTo({ left: scroll.scrollLeft, top: scroll.scrollTop + offset.top, behavior: "instant" });
+      }
+      if (offset.left !== 0) {
+        gliding = animate && !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        scroll.scrollTo({ left: scroll.scrollLeft + offset.left, top: scroll.scrollTop,
+          behavior: gliding ? "smooth" : "instant" });
+      }
+      return offset.task;
+    };
 
     const activate = issueKey => {
+      clearTimeout(revealTimer);
+      stopGlide();
       root.dataset.highlightedTimelineIssue = issueKey;
       chart.classList.add("is-highlighting-issue");
       tasks.forEach(task => task.classList.toggle("is-highlighted", task.dataset.timelineIssue === issueKey));
       cards.forEach(card => card.classList.toggle("is-highlighted", card.dataset.timelineIssueCard === issueKey));
+      revealTimer = setTimeout(() => revealIssue(issueKey), 200);
     };
 
     const deactivate = issueKey => {
       if (root.dataset.highlightedTimelineIssue !== issueKey) return;
 
+      clearTimeout(revealTimer);
+      stopGlide();
       delete root.dataset.highlightedTimelineIssue;
       chart.classList.remove("is-highlighting-issue");
       tasks.forEach(task => task.classList.remove("is-highlighted"));
       cards.forEach(card => card.classList.remove("is-highlighted"));
     };
+
+    const showIssue = issueKey => {
+      if (!scroll || !tasks.some(task => task.dataset.timelineIssue === issueKey)) return;
+      scroll.focus({ preventScroll: true });
+      activate(issueKey);
+      clearTimeout(revealTimer);
+      const task = revealIssue(issueKey, false);
+      task?.scrollIntoView({ block: "center", inline: "nearest", behavior: "instant" });
+      revealIssue(issueKey, false);
+    };
+
+    root.querySelectorAll("[data-reveal-timeline-issue]").forEach(button => {
+      button.addEventListener("click", () => {
+        button.closest("dialog")?.close();
+        showIssue(button.dataset.revealTimelineIssue);
+      });
+    });
 
     cards.forEach(card => {
       const issueKey = card.dataset.timelineIssueCard;
@@ -718,6 +820,9 @@
       card.addEventListener("focusin", () => activate(issueKey));
       card.addEventListener("focusout", event => {
         if (!card.contains(event.relatedTarget)) deactivate(issueKey);
+      });
+      card.querySelector("[data-show-in-timeline]")?.addEventListener("click", () => {
+        showIssue(issueKey);
       });
     });
   };
